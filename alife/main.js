@@ -1,7 +1,7 @@
 window.addEventListener("load",function(){
     let canvas;
     let gl
-    let w=1000;h=1000;
+    let w=200;h=200;
     canvas=document.getElementById('GrayScott');
     canvas.width=w;//window.innerWidth*0.8;
     canvas.height=h;//window.innerHeight*0.8;

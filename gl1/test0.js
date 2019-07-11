@@ -12,8 +12,8 @@ window.addEventListener("load",()=>{
     c = document.getElementById('t0');
     
     // canvas サイズ
-    cw = 512; ch = 512;
-    c.width = cw; c.height = ch;
+    // cw = 512; ch = 512;
+    // c.width = cw; c.height = ch;
     
     // イベントリスナー登録
      c.addEventListener('mousemove',(e)=>{
@@ -48,7 +48,7 @@ window.addEventListener("load",()=>{
 
         void main(void){
             vec2 p = (gl_FragCoord.xy * 2.0 - resolution) / min(resolution.x, resolution.y);
-            vec4 color = vec4(p[0],p[1],0.0,1.0);
+            vec4 color = vec4(mouse[0],mouse[1],time,1.0);
 
             gl_FragColor = color;
         }
@@ -114,7 +114,7 @@ window.addEventListener("load",()=>{
         gl.clear(gl.COLOR_BUFFER_BIT);
         
         // uniform 関連
-        gl.uniform1f(uniLocation[0], time + tempTime);
+        gl.uniform1f(uniLocation[0], 0.5*(Math.sin(time)+1));
         gl.uniform2fv(uniLocation[1], [mx, my]);
         gl.uniform2fv(uniLocation[2], [cw, ch]);
         
@@ -122,8 +122,9 @@ window.addEventListener("load",()=>{
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexVbo0);
         gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
         gl.flush();
-        
         // 再帰
+
+        console.log(mx,my);
         setTimeout(render, fps/1000);
     }
 });
