@@ -1,0 +1,44 @@
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <p><a href="../works.html">works</a></p>
+        <title>GAME</title>
+        <script src="../js/minMatrix.js" type="text/javascript"></script>
+        <script src="../js/rakutext.js" type="text/javascript"></script>
+        <script src="main.js" type="text/javascript"></script>
+
+    </head>
+    <body>
+        <h1>交通整理（工事中）</h1>
+        <canvas id="c"></canvas>
+        <form name="form"><input typr="text" name="score" value="0,0,0,0" disabled="readonly"></form>
+        <div id="text0" style="line-height:110%;">
+            <h1>Rule</h1>
+            
+            車が交差点を走っています
+            あなたは車の曲がる方向を指定することができます。ただしUターンはできません。
+            WASDか矢印で変えられます。
+
+            同じ色の車は道にたまっていきます。
+            違う色の車が侵入すると，たまっていた車は折り返して交差点へ戻ります。
+            同じ色の車を5つためると，その道はその色の車専用の道路になります。たまっていた車が消えてポイントが付きます。
+            その後も5つためるごとにポイントが加算されていきます。
+
+            専用道路に違う色の車が侵入する，または長いこと車が来ないと，ポイントが消えます。
+            ただし，ほかの道がすでに専用道路になっている場合は，そちらにポイントが加算されます。
+            また，専用道路が２つある場合には，それぞれの道路にポイントが加算されます。
+
+            ４つの道路すべてが専用道路となっている間，アウトバーンモードになります。
+            アウトバーンモードでは，１台の車でポイントを付けられるようになります。
+            いずれかの専用道路が消えると，モード終了です。
+            
+            画面右にある球に棒が迫ってきます。
+            棒がぶつかるとゲームオーバーです。
+            救急車が専用道路に侵入した場合，ポイント分球を持ち上げることができます。
+            救急車は自然発生しますが，自身が所持している場合には，任意のタイミングで出動させることができます。
+        </div>
+        <div id="text1" style="line-height:110%;">
+            元:DIGIDRIVE (<a href=https://www.nintendo.co.jp/n08/bit_g/digidrive/index.html>公式サイト</a>)
+        </div>
+</body>
+</html>
