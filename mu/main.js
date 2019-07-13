@@ -202,6 +202,8 @@ window.addEventListener("load",function(){
     canvas.addEventListener("click",init,false);
     button.addEventListener('click',init,false);
     document.addEventListener('keydown',init,false);
+
+    init();
     
     function sound(chord){
         let n=chord.node;
@@ -294,12 +296,22 @@ window.addEventListener("load",function(){
         request.send(null);
 
         function _init(){
+            console.log('_init');
             let script = document.createElement('script');
             script.text = request.responseText;
             document.head.appendChild(script);
 
-            synth = new Tone.PolySynth(6,Tone.Synth).toMaster();
-            synth.set("detune", -1200);
+            //synth = new Tone.PolySynth(6,Tone.Synth).toMaster();
+            synth = new Tone.Sampler({
+                "C3":"c3.[mp3|wav]",
+            },{
+                "baseUrl":"audio/",
+                "onload":function(){
+                    console.log('loaded');
+                }
+            }).toMaster();
+            //synth.triggerAttack("C3");
+            //synth.set("detune", -1200);
 
             canvas.addEventListener("click",()=>{
                 sound(Note.rand(max,min,fSharp,fChord));

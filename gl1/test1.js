@@ -6,17 +6,16 @@ window.addEventListener("load",()=>{
     var tempTime = 0.0;
     var fps = 30;
     var uniLocation = new Array();
-
     // canvas エレメントを取得
-    c = document.getElementById('background');
+    c = document.getElementById('content1');
     
     // canvas サイズ
-    cw = window.outerWidth; 
-    ch = window.outerHeight;
+    cw = 500; 
+    ch = 500;
     c.width = cw; c.height = ch;
     
     // イベントリスナー登録
-    document.addEventListener('mousemove',(e)=>{
+     c.addEventListener('mousemove',(e)=>{
                                         mx = e.offsetX / cw;
                                         my = e.offsetY / ch;
                                     }, true);
@@ -41,17 +40,49 @@ window.addEventListener("load",()=>{
     if(!gl.getShaderParameter(vShader, gl.COMPILE_STATUS))console.log(gl.getShaderInfoLog(vShader));
 
     var fSource = [`
-        precision mediump float;
-        uniform float time;
-        uniform vec2  mouse;
-        uniform vec2  resolution;
-
-        void main(void){
-            vec2 p = (gl_FragCoord.xy * 2.0 - resolution) / min(resolution.x, resolution.y);
-            vec4 color = vec4(mouse[0],mouse[1],time,1.0);
-
-            gl_FragColor = color;
+    precision mediump float;
+    uniform float time;
+    uniform vec2  mouse;
+    uniform vec2  resolution;
+    
+    // HSV カラー生成関数
+    vec3 hsv(float h, float s, float v){
+        vec4 t = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+        vec3 p = abs(fract(vec3(h) + t.xyz) * 6.0 - vec3(t.w));
+        return v * mix(vec3(t.x), clamp(p - vec3(t.x), 0.0, 1.0), s);
+    }
+    
+    void main(void){
+        // マウス座標の正規化
+        vec2 m = vec2(mouse.x * 2.0 - 1.0, -mouse.y * 2.0 + 1.0);
+        
+        // フラグメント座標の正規化
+        vec2 p = (gl_FragCoord.xy * 2.0 - resolution) / min(resolution.x, resolution.y);
+        
+        // マンデルブロ集合
+        int j = 0;                     // カウンタ
+        vec2  x = p + vec2(-0.5, 0.0); // 原点を少しずらす
+        float y = 1.5 - mouse.x * 1.0; // マウス座標を使って拡大度を変更
+        vec2  z = vec2(0.0, 0.0);      // 漸化式 Z の初期値
+        
+        // 漸化式の繰り返し処理(今回は 360 回ループ)
+        for(int i = 0; i < 360; i++){
+            j++;
+            if(length(z) > 2.0){break;}
+            z = vec2(z.x * z.x - z.y * z.y, 2.0 * z.x * z.y) + x * y;
         }
+        
+        // 時間の経過で色を HSV 出力する
+        float h = mod(time * 20.0, 360.0) / 360.0;
+        vec3 rgb = hsv(h, 1.0, 1.0);
+        
+        // 漸化式で繰り返した回数をもとに輝度を決める
+        float t = float(j) / 360.0;
+        
+        // 最終的な色の出力
+        gl_FragColor = vec4(rgb * t, 1.0);
+        
+    }
     `].join("\n");
     var fShader = gl.createShader(gl.FRAGMENT_SHADER);
     gl.shaderSource(fShader, fSource);
@@ -106,9 +137,7 @@ window.addEventListener("load",()=>{
     function render(){
         // フラグチェック
         if(!run)return 0;
-        cw = window.outerWidth; 
-        ch = window.outerHeight;
-        c.width = cw; c.height = ch;
+
         // 時間管理
         time = (new Date().getTime() - startTime) * 0.001;
         
