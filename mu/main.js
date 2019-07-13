@@ -218,7 +218,7 @@ window.addEventListener("load",function(){
         let n=chord.node;
         let f=Note.getFreq(n);
         let c=Note.getPitchName(n);
-        console.log(n,c,f,chord.name);
+        console.log(c,chord.name,n,f);
         ansField.value="["+c+"]   "+(chord.name?chord.name:"");
         synth.triggerAttackRelease(c,'4n');
     }
@@ -310,10 +310,19 @@ window.addEventListener("load",function(){
             script.text = request.responseText;
             document.head.appendChild(script);
 
-            //synth = new Tone.PolySynth(6,Tone.Synth).toMaster();
+            synth = new Tone.PolySynth(6,Tone.Synth).toMaster();
             synth = new Tone.Sampler({
-                "C4":"https://maoudamashii.jokersounds.com/music/se/mp3/se_maoudamashii_instruments_piano2_1do.mp3"
-            }).toMaster();
+                "C4":"c3.mp3",
+                "D4":"d3.mp3",
+                "e4":"e3.mp3",
+                "f4":"f3.mp3",
+                "g4":"g3.mp3",
+                "a4":"a3.mp3",
+                "b4":"b3.mp3",
+            },()=>{
+                synth.release = 5.0;
+                synth.volume.value = -6;
+            },"http://ksgk.html.xdomain.jp/mu/audio/").toMaster();
             //synth.triggerAttack("C3");
             //synth.set("detune", -1200);
 
