@@ -203,7 +203,16 @@ window.addEventListener("load",function(){
     button.addEventListener('click',init,false);
     document.addEventListener('keydown',init,false);
 
-    init();
+    //init();
+    /*
+    VM27:7 Uncaught Error: buffer is either not set or not loaded
+    at t.BufferSource.e.assert (<anonymous>:7:2351)
+    at t.BufferSource.start (<anonymous>:7:68264)
+    at t.Sampler.triggerAttack (<anonymous>:7:199147)
+    at t.Sampler.triggerAttackRelease (<anonymous>:7:200132)
+    at sound (main.js:214)
+    at HTMLCanvasElement.<anonymous> (main.js:317)
+    */
     
     function sound(chord){
         let n=chord.node;
@@ -303,12 +312,7 @@ window.addEventListener("load",function(){
 
             //synth = new Tone.PolySynth(6,Tone.Synth).toMaster();
             synth = new Tone.Sampler({
-                "C3":"c3.[mp3|wav]",
-            },{
-                "baseUrl":"audio/",
-                "onload":function(){
-                    console.log('loaded');
-                }
+                "C4":"https://maoudamashii.jokersounds.com/music/se/mp3/se_maoudamashii_instruments_piano2_1do.mp3"
             }).toMaster();
             //synth.triggerAttack("C3");
             //synth.set("detune", -1200);
