@@ -45,16 +45,12 @@ window.addEventListener("load",()=>{
         uniform float time;
         uniform vec2  mouse;
         uniform vec2  resolution;
-        uniform sampler2D data;
 
         void main(void){
-            //vec2 p = (gl_FragCoord.xy * 2.0 - resolution) / min(resolution.x, resolution.y);
-            vec2 p = gl_FragCoord.xy;
-            vec2 r = resolution.xy;
-            vec2 u = gl_FragCoord.xy/resolution.xy;
-            
+            vec2 p = (gl_FragCoord.xy * 2.0 - resolution) / min(resolution.x, resolution.y);
+            vec4 color = vec4(mod(10.0,p.x+0.5),time,time,1.0);
 
-            gl_FragColor = texture2D(data,gl_FragCoord.xy);
+            gl_FragColor = color;
         }
     `].join("\n");
     var fShader = gl.createShader(gl.FRAGMENT_SHADER);
@@ -73,7 +69,6 @@ window.addEventListener("load",()=>{
     uniLocation[0] = gl.getUniformLocation(program, 'time');
     uniLocation[1] = gl.getUniformLocation(program, 'mouse');
     uniLocation[2] = gl.getUniformLocation(program, 'resolution');
-    uniLocation[3] = gl.getUniformLocation(program, 'data');
     
     // 頂点データ回りの初期化
     var position0 = [
@@ -99,23 +94,7 @@ window.addEventListener("load",()=>{
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Int16Array(index0), gl.STATIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 
-    //テクスチャオブジェクト作成
-    var texture;
-    var img = new Image();
-    img.onload = ()=>{
-        console.log("load")
-        var tex = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, tex);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-        gl.generateMipmap(gl.TEXTURE_2D);
-        gl.bindTexture(gl.TEXTURE_2D, null);
-        texture0 = tex;
-    }
-    img.src="img.jpg";
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.uniform1i(uniLocation[3], 0);
-
+    
     // その他の初期化
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     mx = 0.5; my = 0.5;
