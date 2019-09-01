@@ -113,7 +113,6 @@ window.addEventListener("load",function(){
             this.pos = addArray(this.pos,this.vec.map(x=>x*sp));
         }
         draw(program,vMatrix,pMatrix){
-
             if(this.vis){
                 setAttribute([this.posVbo,this.colVbo],attLocation,attStride);
 

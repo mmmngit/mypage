@@ -311,20 +311,20 @@ window.addEventListener("load",function(){
             document.head.appendChild(script);
 
             synth = new Tone.PolySynth(6,Tone.Synth).toMaster();
-            synth = new Tone.Sampler({
-                "C4":"c3.mp3",
-                "D4":"d3.mp3",
-                "e4":"e3.mp3",
-                "f4":"f3.mp3",
-                "g4":"g3.mp3",
-                "a4":"a3.mp3",
-                "b4":"b3.mp3",
-            },()=>{
-                synth.release = 5.0;
-                synth.volume.value = -6;
-            },"http://ksgk.html.xdomain.jp/mu/audio/").toMaster();
+            // synth = new Tone.Sampler({
+            //     "C4":"c3.mp3",
+            //     "D4":"d3.mp3",
+            //     "e4":"e3.mp3",
+            //     "f4":"f3.mp3",
+            //     "g4":"g3.mp3",
+            //     "a4":"a3.mp3",
+            //     "b4":"b3.mp3",
+            // },()=>{
+            //     synth.release = 5.0;
+            //     synth.volume.value = -6;
+            // },"http://ksgk.html.xdomain.jp/mu/audio/").toMaster();
             //synth.triggerAttack("C3");
-            //synth.set("detune", -1200);
+            synth.set("detune", -1200);
 
             canvas.addEventListener("click",()=>{
                 sound(Note.rand(max,min,fSharp,fChord));
