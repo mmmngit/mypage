@@ -64,24 +64,24 @@ window.addEventListener("load",()=>{
         }
         static getPitchName(num){
             if(isArray(num)){
-                let t=num.map(x=>x=this.getPitchName(x));
+                let t=num.map(x=>this.getPitchName(x));
                 return t;
             }else{
-                let o=Math.floor(num/12)-1;
+                let o=Math.floor(num/12)+1;
                 let t=num%12;
                 switch(t){
-                    case 0: t='C'; break;
-                    case 1: t='C#';break;
-                    case 2: t='D'; break;
-                    case 3: t='D#';break;
-                    case 4: t='E'; break;
-                    case 5: t='F'; break;
-                    case 6: t='F#';break;
-                    case 7: t='G'; break;
-                    case 8: t='G#';break;
-                    case 9: t='A'; break;
-                    case 10:t='A#';break;
-                    case 11:t='B'; break;
+                    case 0: t='G#';o--; break;
+                    case 1: t='A';o--;break;
+                    case 2: t='A#';o--; break;
+                    case 3: t='B';o--;break;
+                    case 4: t='C'; break;
+                    case 5: t='C#'; break;
+                    case 6: t='D';break;
+                    case 7: t='D#'; break;
+                    case 8: t='E';break;
+                    case 9: t='F'; break;
+                    case 10:t='F#';break;
+                    case 11:t='G'; break;
                 }
                 return t+o;
             }
@@ -100,31 +100,52 @@ window.addEventListener("load",()=>{
                 return {node:t,name:null};
             }
         }
+        static randDirtonicChord(root,octave=1){
+            let t=irand(7*octave);console.log(t)
+            let n;
+            switch(t%7){
+                case 0:case 3:case 4:
+                    n=this.chordGenerator("M",this.keyAdd(root,t));
+                break;
+                case 1:case 2:case 5:case 6:
+                    n=this.chordGenerator("m",this.keyAdd(root,t));
+                break;
+            }
+            return {node:n};
+        }
     
-        // chordGenerator(chord,root){
-    
-        //     if(isArray(chord)){
-        //         return chord.map(x=>x+root);
-        //     }else if(isString(chord)){
-        //         switch(chord){
-        //             case "M":
-                        
-        //             break;
-        //             case "m":
-        //             break;
-        //             default:
-        //             break;
-        //         }
-        //     }else{
-        //         return ;
-        //     }
-        // }
+        static chordGenerator(chordName,root){
+            if(!root)root=20;
+            if(isArray(chordName)){
+                return chordName.map(x=>this.getPitchName(x+root));
+            }else if(isString(chordName)){
+                return chord[chordName].map(x=>this.getPitchName(x+root));
+            }else{
+                return ;
+            }
+        }
+        static keyAdd(root,num){
+            if(num==0)return root;
+            if(this.isSharp(root+1))return this.keyAdd(root+2,num-1);else return this.keyAdd(root+1,num-1);
+        }
+        static isSharp(num){
+            let t=num%12;
+            switch(t){
+                case 0:case 2:case 5:case 7:case 10:
+                    return 1;
+                break;
+                case 1:case 3:case 4:case 6:case 8:case 9:case 11:
+                    return 0;
+                break;
+            }
+        }
         // view(){
     
         // }
     }
 
     class glGif{
+        visible;
         counter;
         speed;
         images;
@@ -148,6 +169,7 @@ window.addEventListener("load",()=>{
         //uniLocation:[0] mvpMatrix,[1] texture
         constructor(set={})
         {
+            this.visible=1;
             this.counter=0;
             this.loaded=0;
             if(("voltexPosition" in set)&&("voltexColor" in set)&&("index" in set)){
@@ -276,11 +298,13 @@ window.addEventListener("load",()=>{
     
         draw(mode=gl.TRIANGLES){
             //描画
-            gl.bindTexture(gl.TEXTURE_2D, this.texture);
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.Ibo);
-            gl.drawElements(mode, this.index.length, gl.UNSIGNED_SHORT, 0);
-            gl.bindTexture(gl.TEXTURE_2D, null);
-            gl.bindBuffer(gl.ARRAY_BUFFER, null);
+            if(this.visible){
+                gl.bindTexture(gl.TEXTURE_2D, this.texture);
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.Ibo);
+                gl.drawElements(mode, this.index.length, gl.UNSIGNED_SHORT, 0);
+                gl.bindTexture(gl.TEXTURE_2D, null);
+                gl.bindBuffer(gl.ARRAY_BUFFER, null);
+            }
         }
 
         updatePosition(){
@@ -351,14 +375,6 @@ window.addEventListener("load",()=>{
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
             }
         }
-    
-        addArray(a,b){
-            var t=new Array(a.length);
-            for(var i=0;i<a.length;i++){
-                t[i]=a[i]+b[i];
-            }
-            return t;
-        }
     }
 
     class Score{
@@ -401,18 +417,19 @@ window.addEventListener("load",()=>{
                     "F4":[0.0, 1.05,0.0],
                     "G4":[0.0, 1.10,0.0],
                     "A4":[0.0, 1.15,0.0],
-                    "D4":[0.0, 1.20,0.0],
-                    "B4":[0.0, 1.25,0.0],
-                    "C5":[0.0, 1.30,0.0],
-                    "D5":[0.0, 1.35,0.0],
-                    "E5":[0.0, 1.40,0.0],
-                    "F5":[0.0, 1.45,0.0],
+                    "B4":[0.0, 1.20,0.0],
+                    "C5":[0.0, 1.25,0.0],
+                    "D5":[0.0, 1.30,0.0],
+                    "E5":[0.0, 1.35,0.0],
+                    "F5":[0.0, 1.40,0.0],
+                    "G5":[0.0, 1.45,0.0],
         
-                    "G5":[0.0, 1.50,0.0],
-                    "A5":[0.0, 1.55,0.0],
-                    "B5":[0.0, 1.60,0.0],
-                    "C5":[0.0, 1.65,0.0],
-                    "D5":[0.0, 1.70,0.0],
+                    "A5":[0.0, 1.50,0.0],
+                    "B5":[0.0, 1.55,0.0],
+                    "C6":[0.0, 1.60,0.0],
+                    "D6":[0.0, 1.65,0.0],
+                    "E6":[0.0, 1.70,0.0],
+                    //42+black=:62
                 }
             };
             this.img={
@@ -475,7 +492,7 @@ window.addEventListener("load",()=>{
                 this.alt[i]=new glGif(this.altwataten5);
             }
 
-            this.alt[0].position=[0.0,this.notePosition.to.C4[1],0.0];
+            this.alt[0].position=[-1.0,0.0,0.0];
 
             this.staff[0].position=[0.0,1.0,0.0];
             this.staff[1].position=[0.0,0.0,0.0];
@@ -483,18 +500,25 @@ window.addEventListener("load",()=>{
         get isloaded(){
             return this.loaded>=this.noteNum+2?1:0;
         }
-        setCode(code){
-            let i=0;
-            for(let x of code.node){
-                let name=Note.getPitchName(x);
-                console.log(name)
-                if(name in this.notePosition.he){
-                    this.note[i].position=[0.0,this.notePosition.he[name],0.0]
+        setChord(chord){
+            let n=chord.node.length;
+            console.log(chord.node)
+            for(let i=0;i<this.noteNum;i++){
+                if(i<n){
+                    this.note[i].visible=1;
+                    if(chord.node[i] in this.notePosition.to){
+                        this.setNotePosition(i,chord.node[i])
+                    }else{
+                        this.note[i].visible=0;
+                        console.log("nai");
+                    };
                 }else{
-                    console.log("nai");
-                };
-                i++;
+                    this.note[i].visible=0;
+                }
             }
+        }
+        setNotePosition(num,posName){
+            this.note[num].position=[0.0,this.notePosition.to[posName][1],0.0];
         }
 
         draw(vpMatrix){
@@ -645,7 +669,10 @@ window.addEventListener("load",()=>{
     mx = 0.5; my = 0.5;
     startTime = new Date().getTime();
     
-    fps=1;
+    window.addEventListener("click",()=>{
+        score.setChord(Note.randDirtonicChord(40,2));
+    })
+    fps=60;
     count=0;
     loading();
     function loading(){
@@ -662,7 +689,7 @@ window.addEventListener("load",()=>{
         gl.clear(gl.COLOR_BUFFER_BIT);
         
         score.draw(vpMatrix);
-        score.setCode(Note.rand(0,88,0,1))
+        
         gl.flush();
         // 再帰
 

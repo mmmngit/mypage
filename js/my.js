@@ -10,6 +10,13 @@ function isString(obj) {
 function isArray(obj){
     return typeof (obj) == "Array" || obj instanceof Array;
 }
+function addArray(a,b){
+    var t=new Array(a.length);
+    for(var i=0;i<a.length;i++){
+        t[i]=a[i]+b[i];
+    }
+    return t;
+}
 
 class GLObject{
     constructor(Vposition=[0.0,0.0,0.0], Vcolor=[0.0,0.0,0.0,1.0] ,Vindex=[0],
