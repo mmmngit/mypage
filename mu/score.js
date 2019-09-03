@@ -2,6 +2,7 @@ window.addEventListener("load",()=>{
     chord={
         "M":[0,4,7],
         "m":[0,3,7],
+        "m-5":[0,3,6],
         "aug":[0,4,8],
         "dim":[0,3,6],
         "sus2":[0,2,7],
@@ -12,136 +13,13 @@ window.addEventListener("load",()=>{
         "mM7":[0,3,7,11],
         "7":[0,4,7,10],
         "m7":[0,3,7,10],
+        "m7-5":[0,3,6,10],
         "aug7":[0,4,8,10],
         "dim7":[0,3,6,9],
         "7sus4":[0,5,7,10],
-        "m7-5":[0,3,6,10],
         "add9":[0,2,4,7],
         "9":[0,4,7,10,14],
         "m9":[0,2,3,7,10]
-    }
-    
-    class Note{//ノート部
-        constructor(root,scales,length,symbols){
-            this.root=isString(root)?this.rootParser(root):root;
-            this.scales=isArray(scales)?1:scales;
-            this.length=length;
-            this.symbols=symbols;
-        }
-        static getFreq(root){
-            if(isArray(root)){
-                let t=root.map(x=>x=this.getFreq(x));
-                return t;
-            }else{
-                let n;
-                if(isString(root))n=this.getNum(root);else n=root;
-                let t=440*Math.pow(2,(n-69)/12);
-                return t;
-            }
-        }
-        static getNum(root){
-            if(isArray(root)){
-                let t=root.map(x=>x=this.getNum(x));
-                return t;
-            }else{
-                let t=root.toUpperCase().charCodeAt(0)-65;
-                let n=root.slice(1);
-    
-                if(0>t||7<t)return 60;
-                if(n[0]==="#"){
-                    t++;
-                    n=n.slice(1);
-                }else if(n[0]==="♭"){
-                    t--;
-                    n=n.slice(1);
-                }else if(+n!==+n){
-                    n=0;
-                }
-                if(!n)n=4;
-                t+=+n*12+10;
-                return t;
-            }
-        }
-        static getPitchName(num){
-            if(isArray(num)){
-                let t=num.map(x=>this.getPitchName(x));
-                return t;
-            }else{
-                let o=Math.floor(num/12)+1;
-                let t=num%12;
-                switch(t){
-                    case 0: t='G#';o--; break;
-                    case 1: t='A';o--;break;
-                    case 2: t='A#';o--; break;
-                    case 3: t='B';o--;break;
-                    case 4: t='C'; break;
-                    case 5: t='C#'; break;
-                    case 6: t='D';break;
-                    case 7: t='D#'; break;
-                    case 8: t='E';break;
-                    case 9: t='F'; break;
-                    case 10:t='F#';break;
-                    case 11:t='G'; break;
-                }
-                return t+o;
-            }
-        }
-    
-        static rand(max,min,fSharp,fChord){
-            if(fChord){
-                let t=this.rand(max,min,fSharp,0);
-                let i=Object.keys(chord)[irand(Object.keys(chord).length,1)-1];
-                let a=chord[i];
-                return {node:a.map(x=>t.node+x),name:i};
-            }else{
-                let t=irand(max,min);
-                let a=t%12;
-                if(!fSharp)while(a<5&&a%2==1||a>5&&a%2==0){t=irand(max,min);a=t%12;};
-                return {node:t,name:null};
-            }
-        }
-        static randDirtonicChord(root,octave=1){
-            let t=irand(7*octave);console.log(t)
-            let n;
-            switch(t%7){
-                case 0:case 3:case 4:
-                    n=this.chordGenerator("M",this.keyAdd(root,t));
-                break;
-                case 1:case 2:case 5:case 6:
-                    n=this.chordGenerator("m",this.keyAdd(root,t));
-                break;
-            }
-            return {node:n};
-        }
-    
-        static chordGenerator(chordName,root){
-            if(!root)root=20;
-            if(isArray(chordName)){
-                return chordName.map(x=>this.getPitchName(x+root));
-            }else if(isString(chordName)){
-                return chord[chordName].map(x=>this.getPitchName(x+root));
-            }else{
-                return ;
-            }
-        }
-        static keyAdd(root,num){
-            if(num==0)return root;
-            if(this.isSharp(root+1))return this.keyAdd(root+2,num-1);else return this.keyAdd(root+1,num-1);
-        }
-        static isSharp(num){
-            let t=num%12;
-            switch(t){
-                case 0:case 2:case 5:case 7:case 10:
-                    return 1;
-                break;
-                case 1:case 3:case 4:case 6:case 8:case 9:case 11:
-                    return 0;
-                break;
-            }
-        }
-        // view(){
-    
-        // }
     }
 
     class glGif{
@@ -377,8 +255,153 @@ window.addEventListener("load",()=>{
         }
     }
 
+    class Note extends glGif{//ノート部
+        // constructor(root,scales,length,symbols){
+        //     this.root=isString(root)?this.rootParser(root):root;
+        //     this.scales=isArray(scales)?1:scales;
+        //     this.length=length;
+        //     this.symbols=symbols;
+        // }
+        setRoot(num){
+            this.root=num;
+        }
+        setSharp(bool){
+            this.sharp=bool;
+        }
+        static getFreq(root){
+            if(isArray(root)){
+                let t=root.map(x=>x=this.getFreq(x));
+                return t;
+            }else{
+                let n;
+                if(isString(root))n=this.getNum(root);else n=root;
+                let t=440*Math.pow(2,(n-69)/12);
+                return t;
+            }
+        }
+        static getNum(root){
+            if(isArray(root)){
+                let t=root.map(x=>x=this.getNum(x));
+                return t;
+            }else{
+                let t=root.toUpperCase().charCodeAt(0)-65;
+                let n=root.slice(1);
+    
+                if(0>t||7<t)return 60;
+                if(n[0]==="#"){
+                    t++;
+                    n=n.slice(1);
+                }else if(n[0]==="♭"){
+                    t--;
+                    n=n.slice(1);
+                }else if(+n!==+n){
+                    n=0;
+                }
+                if(!n)n=4;
+                t+=+n*12+10;
+                return t;
+            }
+        }
+        static getPitchName(num,exceptSharp=0){
+            if(isArray(num)){
+                let t=num.map(x=>this.getPitchName(x));
+                return t;
+            }else{
+                let o=Math.floor(num/12)-1;
+                let t=num%12;
+                switch(t){
+                    case 0: t='C';; break;
+                    case 1: t='C#';;break;
+                    case 2: t='D';; break;
+                    case 3: t='D#';;break;
+                    case 4: t='E'; break;
+                    case 5: t='F'; break;
+                    case 6: t='F#';break;
+                    case 7: t='G'; break;
+                    case 8: t='G#';break;
+                    case 9: t='A'; break;
+                    case 10:t='A#';break;
+                    case 11:t='B'; break;
+                }
+                if(exceptSharp){
+                    return t[0]+o;
+                }
+                return t+o;
+            }
+        }
+    
+        static rand(max,min,fSharp,fChord){
+            if(fChord){
+                let t=this.rand(max,min,fSharp,0);
+                let i=Object.keys(chord)[irand(Object.keys(chord).length,1)-1];
+                let a=chord[i];
+                return {node:a.map(x=>t.node+x),name:i};
+            }else{
+                let t=irand(max,min);
+                let a=t%12;
+                if(!fSharp)while(a<5&&a%2==1||a>5&&a%2==0){t=irand(max,min);a=t%12;};
+                return {node:t,name:null};
+            }
+        }
+        static randDirtonicChord(root,octave=1){
+            let t=irand(7*octave);
+            let n;
+            switch(t%7){
+                case 0:case 3:case 4:
+                    n=this.chordGenerator("M",this.keyAdd(root,t));
+                break;
+                case 1:case 2:case 5:
+                    n=this.chordGenerator("m",this.keyAdd(root,t));
+                break;
+                case 6:
+                    n=this.chordGenerator("m-5",this.keyAdd(root,t));
+                break;
+            }
+            return {node:n};
+        }
+    
+        static chordGenerator(chordName,root){
+            if(!root)root=60;
+            if(isArray(chordName)){
+                return chordName.map(x=>x+root);
+            }else if(isString(chordName)){
+                return chord[chordName].map(x=>x+root);
+            }else{
+                return;
+            }
+        }
+        static keyAdd(root,num,key=0){
+            if(num==0)return root;
+            if(this.isSharp(root+1))return this.keyAdd(root+2,num-1);else return this.keyAdd(root+1,num-1);
+        }
+        static keySub(root,num,key=0){
+            if(num==0)return root;
+            if(this.isSharp(root-1))return this.keySub(root-2,num-1);else return this.keySub(root-1,num-1);
+        }
+        static isSharp(num,key=0){
+            if(isString(num)){
+                if(num[1]=="#")return 1;else return 0;
+            }else{
+            let t=num%12;
+                switch(t){
+                    case 0:case 2:case 4:case 5:case 7:case 9:case 11:
+                        return 0;
+                    break;
+                    case 1:case 3:case 6:case 8:case 10:
+                        return 1;
+                    break;
+                }
+            }
+        }
+        // view(){
+    
+        // }
+    }
+
     class Score{
         constructor(attLocation,uniLocation){
+            this.key=0;
+            this.queue;
             this.notePosition={
                 "he":{
                     "A1":[0.0,-0.30,0.0],
@@ -429,6 +452,11 @@ window.addEventListener("load",()=>{
                     "C6":[0.0, 1.60,0.0],
                     "D6":[0.0, 1.65,0.0],
                     "E6":[0.0, 1.70,0.0],
+                    "F6":[0.0, 1.75,0.0],
+                    "G6":[0.0, 1.80,0.0],
+                    "A6":[0.0, 1.85,0.0],
+                    "B6":[0.0, 1.90,0.0],
+                    "C7":[0.0, 1.95,0.0],
                     //42+black=:62
                 }
             };
@@ -456,7 +484,11 @@ window.addEventListener("load",()=>{
                 "uniLocation":uniLocation
             };
             this.loaded=0;
-            this.noteNum=5;this.staffNum=2;this.altNum=5;
+            this.noteNum=20;
+            this.staffNum=2;
+            this.altNum=12;
+            this.sharpNum=30;
+
             this.to=new glGif(this.img);
             this.to.loadImage("img/to.png",()=>{
                 this.loaded++;
@@ -476,7 +508,7 @@ window.addEventListener("load",()=>{
             this.osize=0.065;
             this.note=new Array(this.noteNum);
             for(let i=0;i<this.noteNum;i++){
-                this.note[i]=new glGif(this.img);
+                this.note[i]=new Note(this.img);
                 this.note[i].position=this.notePosition.to.C4;
                 this.note[i].scale=[this.osize,this.osize,1];
                 this.note[i].loadImage("img/on.png",()=>{
@@ -491,8 +523,19 @@ window.addEventListener("load",()=>{
             for(let i=0;i<this.altNum;i++){
                 this.alt[i]=new glGif(this.altwataten5);
             }
+            this.ssize=0.16;
+            this.sharp=new Array(this.sharpNum);
+            for(let i=0;i<this.sharpNum;i++){
+                this.sharp[i]=new glGif(this.img);
+                this.sharp[i].position=[-0.15,0.0,0.01];
+                this.sharp[i].scale=[this.ssize,this.ssize,1];
+                this.sharp[i].visible=0;
+                this.sharp[i].loadImage("img/sha.png",()=>{
+                    this.loaded++;
+                });
+            }
 
-            this.alt[0].position=[-1.0,0.0,0.0];
+            this.alt[0].position=[0.0,0.9,0.0];
 
             this.staff[0].position=[0.0,1.0,0.0];
             this.staff[1].position=[0.0,0.0,0.0];
@@ -500,27 +543,61 @@ window.addEventListener("load",()=>{
         get isloaded(){
             return this.loaded>=this.noteNum+2?1:0;
         }
-        setChord(chord){
+        setChord(chord,base=0){
             let n=chord.node.length;
-            console.log(chord.node)
+            console.log(chord.node,Note.getPitchName(chord.node))
             for(let i=0;i<this.noteNum;i++){
                 if(i<n){
+                    this.note[i].root=chord.node[i];
                     this.note[i].visible=1;
-                    if(chord.node[i] in this.notePosition.to){
-                        this.setNotePosition(i,chord.node[i])
-                    }else{
-                        this.note[i].visible=0;
-                        console.log("nai");
-                    };
+                    this.setNotePosition(i,this.note[i].root);
                 }else{
                     this.note[i].visible=0;
                 }
             }
+            if(base){
+                this.note[n].visible=1;
+                this.setNotePosition(n,Note.getPitchName(chord.node[n-1])[0]+"2","he");
+            }
+            this.noteCheck();
         }
-        setNotePosition(num,posName){
-            this.note[num].position=[0.0,this.notePosition.to[posName][1],0.0];
-        }
+        setNotePosition(num,posName,location="to"){
+            this.note[num].root=posName;
+            if(isString(posName)){
+                posName=Note.getNum(posName);
+            }else{
 
+            }
+            this.note[num].position=[0.0,this.notePosition[location][Note.getPitchName(posName,1)][1],0.0];
+        }
+        setSharp(){
+            for(let i=0;i<this.noteNum;i++){
+                if(this.note[i].sharp&&this.note[i].visible){
+                    this.sharp[i].visible=1;
+                    this.sharp[i].position=[-0.15,this.note[i].position[1],0.01];
+                }else{
+                    this.sharp[i].visible=0;
+                }
+            }
+        }
+        setkey(n){
+            if(isString(n)){
+                this.key=Note.getNum(n)%12;
+            }else{
+                this.key=n%12;
+            }
+        }
+        noteCheck(){
+            for(let i=0;i<this.noteNum;i++){
+                if(Note.isSharp(this.note[i].root,this.key)){
+                    this.note[i].sharp=1;
+                }else{
+                    this.note[i].sharp=0;
+                }
+            }
+            this.setSharp();
+        }
+        
         draw(vpMatrix){
             this.staff[0].updatePosition();
             this.staff[0].updateColor();
@@ -564,6 +641,15 @@ window.addEventListener("load",()=>{
                 this.note[i].updateIndex();
                 this.note[i].updateUniform(vpMatrix);
                 this.note[i].draw();
+            }
+            for(let i=0;i<this.sharpNum;i++){
+                this.sharp[i].updatePosition();
+                this.sharp[i].updateColor();
+                this.sharp[i].updateTextureCoord();
+                this.sharp[i].updateTexture();
+                this.sharp[i].updateIndex();
+                this.sharp[i].updateUniform(vpMatrix);
+                this.sharp[i].draw();
             }
         }
     }
@@ -668,9 +754,48 @@ window.addEventListener("load",()=>{
     gl.clear(gl.COLOR_BUFFER_BIT);
     mx = 0.5; my = 0.5;
     startTime = new Date().getTime();
+
+    //Midi keybord Setup
+    let midi;
+    //通信成功時
+    function success(midiAccess){
+        midi = midiAccess;
+        setInput(midiAccess);
+        console.log("MIDI READY");
+    }
+    //通信失敗時
+    function failure(msg){
+        console.log("MIDI FAILED - " + msg);
+    }
+    //MIDIAccessオブジェクトのinputsを取得してイベント付与
+    function setInput(midiAccess){
+        var inputs = midiAccess.inputs;
+        inputs.forEach(function(key,port){
+            console.log("[" + key.state + "] manufacturer:" + key.manufacturer + " / name:" + key.name + " / port:" + port);
+            key.onmidimessage = onMidiMessage;
+        });
+    }
+    //MIDIデバイスからメッセージが送られる時に実行
+    let keyInputqueue=new Array;
+    function onMidiMessage(event){
+        //console.log(event);
+        var str = '';
+        for (var i = 0; i < event.data.length; i++) {
+            str += event.data[i] + ':';
+        }
+        if(event.data[0]==144){
+            keyInputqueue.push(event.data[1]);
+        }
+        if(event.data[0]==128){
+            keyInputqueue=keyInputqueue.filter(x=>x!=event.data[1]);
+        }
+        score.setChord({node:keyInputqueue});
+        //console.log(str);
+    }
+    navigator.requestMIDIAccess({sysex:false}).then(success, failure);
     
     window.addEventListener("click",()=>{
-        score.setChord(Note.randDirtonicChord(40,2));
+        score.setChord(Note.randDirtonicChord(60,1),1);
     })
     fps=60;
     count=0;
