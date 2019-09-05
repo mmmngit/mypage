@@ -262,11 +262,17 @@ window.addEventListener("load",()=>{
         //     this.length=length;
         //     this.symbols=symbols;
         // }
-        setRoot(num){
+        set setRoot(num){
+            if(isString(num)){
+                num=Note.getNum(num);
+            }
             this.root=num;
         }
-        setSharp(bool){
+        set setSharp(bool){
             this.sharp=bool;
+        }
+        set setlocation(location){
+            this.location=location;
         }
         static getFreq(root){
             if(isArray(root)){
@@ -284,21 +290,27 @@ window.addEventListener("load",()=>{
                 let t=root.map(x=>x=this.getNum(x));
                 return t;
             }else{
-                let t=root.toUpperCase().charCodeAt(0)-65;
-                let n=root.slice(1);
-    
+                let t;
+                let n=root.slice(-1);
                 if(0>t||7<t)return 60;
-                if(n[0]==="#"){
+                switch(root[0]){
+                    case "C":t=0;break;
+                    case "D":t=2;break;
+                    case "E":t=4;break;
+                    case "F":t=5;break;
+                    case "G":t=7;break;
+                    case "A":t=9;break;
+                    case "B":t=11;break;
+                }
+                if(root[1]=="#"){
                     t++;
-                    n=n.slice(1);
-                }else if(n[0]==="♭"){
+                }else if(n[1]==="♭"){
                     t--;
-                    n=n.slice(1);
                 }else if(+n!==+n){
                     n=0;
                 }
                 if(!n)n=4;
-                t+=+n*12+10;
+                t+=+n*12+12;
                 return t;
             }
         }
@@ -327,6 +339,31 @@ window.addEventListener("load",()=>{
                     return t[0]+o;
                 }
                 return t+o;
+            }
+        }
+        static getWhiteNum(posName){
+            let t;
+            if(!isString(posName)){
+                posName=Note.getPitchName(posName);
+            }
+            switch(posName[0]){
+                case "C":t=0;break;
+                case "D":t=1;break;
+                case "E":t=2;break;
+                case "F":t=3;break;
+                case "G":t=4;break;
+                case "A":t=5;break;
+                case "B":t=6;break;
+            }
+            let o = +posName.slice(-1);
+            return t+o*7;
+        }
+
+        static exceptSharp(posName){
+            if(isString(posName)){
+                return posName[0]+posName.slice(-1);
+            }else{
+                return this.getPitchName(posName,1);
             }
         }
     
@@ -509,7 +546,7 @@ window.addEventListener("load",()=>{
             this.note=new Array(this.noteNum);
             for(let i=0;i<this.noteNum;i++){
                 this.note[i]=new Note(this.img);
-                this.note[i].position=this.notePosition.to.C4;
+                this.note[i].visible=0;
                 this.note[i].scale=[this.osize,this.osize,1];
                 this.note[i].loadImage("img/on.png",()=>{
                     this.loaded++;
@@ -522,6 +559,7 @@ window.addEventListener("load",()=>{
             this.alt=new Array(this.altNum);
             for(let i=0;i<this.altNum;i++){
                 this.alt[i]=new glGif(this.altwataten5);
+                this.alt[i].visible=0;
             }
             this.ssize=0.16;
             this.sharp=new Array(this.sharpNum);
@@ -543,17 +581,45 @@ window.addEventListener("load",()=>{
         get isloaded(){
             return this.loaded>=this.noteNum+2?1:0;
         }
+        getNotePosition(posName,location="to",x=0,z=0){
+            let t;
+            if(!isString(posName)){
+                posName=Note.getPitchName(posName);
+            }
+            switch(posName[0]){
+                case "C":t=0;break;
+                case "D":t=1;break;
+                case "E":t=2;break;
+                case "F":t=3;break;
+                case "G":t=4;break;
+                case "A":t=5;break;
+                case "B":t=6;break;
+            }
+            let o = +posName.slice(-1);
+            if(location=="to"){
+                return [x,1.2+(t+o*7-34)*0.05,z];
+            }else if(location=="he"){
+                return [x,0.8+(t+o*7-34)*0.05,z];
+            }else{
+                return [0,0,0];
+            }
+            
+        }
         setChord(chord,base=0){
             let n=chord.node.length;
-            console.log(chord.node,Note.getPitchName(chord.node))
-            for(let i=0;i<this.noteNum;i++){
+            if(n>0)console.log(chord.node,Note.getPitchName(chord.node))
+            let i=0;
+            for(let x of this.note){
                 if(i<n){
-                    this.note[i].root=chord.node[i];
-                    this.note[i].visible=1;
-                    this.setNotePosition(i,this.note[i].root);
+                    x.root=chord.node[i];
+                    x.visible=1;
+                    this.setNotePosition(i,x.root,"to");
                 }else{
-                    this.note[i].visible=0;
+                    x.root=-1;
+                    x.root=chord.node[i];
+                    x.visible=0;
                 }
+                i++;
             }
             if(base){
                 this.note[n].visible=1;
@@ -561,20 +627,21 @@ window.addEventListener("load",()=>{
             }
             this.noteCheck();
         }
-        setNotePosition(num,posName,location="to"){
-            this.note[num].root=posName;
+        setNotePosition(num,posName,location=0){
+            this.note[num].setRoot=posName;
             if(isString(posName)){
                 posName=Note.getNum(posName);
-            }else{
-
             }
-            this.note[num].position=[0.0,this.notePosition[location][Note.getPitchName(posName,1)][1],0.0];
+            if(location==0)location=posName<60?"he":"to";
+            this.note[num].setlocation=location;
+            this.note[num].position=this.getNotePosition(posName,location);
         }
         setSharp(){
-            for(let i=0;i<this.noteNum;i++){
-                if(this.note[i].sharp&&this.note[i].visible){
+            let i =0;
+            for(let x of this.note){
+                if(x.sharp&&x.visible){
                     this.sharp[i].visible=1;
-                    this.sharp[i].position=[-0.15,this.note[i].position[1],0.01];
+                    this.sharp[i].position=[-0.15,x.position[1],0.01];
                 }else{
                     this.sharp[i].visible=0;
                 }
@@ -588,14 +655,41 @@ window.addEventListener("load",()=>{
             }
         }
         noteCheck(){
-            for(let i=0;i<this.noteNum;i++){
-                if(Note.isSharp(this.note[i].root,this.key)){
-                    this.note[i].sharp=1;
+            for(let y of this.alt){
+                y.visible=0;
+            }
+            let max=0;;
+
+            for(let x of this.note){
+                if(Note.isSharp(x.root,this.key)){
+                    x.sharp=1;
                 }else{
-                    this.note[i].sharp=0;
+                    x.sharp=0;
+                }
+                if(x.location=="to"){
+                    if(x.root>79){
+                        let t=Math.floor((Note.getWhiteNum(x.root)-38)/2);
+                        if(max<t)max=t;
+                        
+                    }
                 }
             }
+            let i=0;
+            for(let y of this.alt){
+                if(i<max){
+                    y.visible=1;
+                    y.position=this.getNotePosition(Note.keyAdd(81/*A5*/,i*2));
+                    console.log(Note.keyAdd(81/*A5*/,i*2))
+                }else{
+                    y.visible=0;
+                }
+                i++;
+            }
             this.setSharp();
+        }
+
+        play(){
+
         }
         
         draw(vpMatrix){
@@ -611,11 +705,13 @@ window.addEventListener("load",()=>{
             this.staff[1].updateUniform(vpMatrix);
             this.staff[1].draw();
 
-            this.alt[0].updatePosition();
-            this.alt[0].updateColor();
-            this.alt[0].updateIndex();
-            this.alt[0].updateUniform(vpMatrix);
-            this.alt[0].draw();
+            for(let y of this.alt){
+                y.updatePosition();
+                y.updateColor();
+                y.updateIndex();
+                y.updateUniform(vpMatrix);
+                y.draw();
+            }
 
             this.to.updatePosition();
             this.to.updateColor();
@@ -633,14 +729,14 @@ window.addEventListener("load",()=>{
             this.he.updateUniform(vpMatrix);
             this.he.draw();
 
-            for(let i=0;i<this.noteNum;i++){
-                this.note[i].updatePosition();
-                this.note[i].updateColor();
-                this.note[i].updateTextureCoord();
-                this.note[i].updateTexture();
-                this.note[i].updateIndex();
-                this.note[i].updateUniform(vpMatrix);
-                this.note[i].draw();
+            for(let x of this.note){
+                x.updatePosition();
+                x.updateColor();
+                x.updateTextureCoord();
+                x.updateTexture();
+                x.updateIndex();
+                x.updateUniform(vpMatrix);
+                x.draw();
             }
             for(let i=0;i<this.sharpNum;i++){
                 this.sharp[i].updatePosition();
