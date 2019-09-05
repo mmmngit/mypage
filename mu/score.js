@@ -45,11 +45,13 @@ window.addEventListener("load",()=>{
         //(program,Array attlocationName,Array unilocationName)で全部こっちで出来る
         //attLocation:[0]
         //uniLocation:[0] mvpMatrix,[1] texture
-        constructor(set={})
+        constructor(set={},iset={})
         {
             this.visible=1;
             this.counter=0;
             this.loaded=0;
+
+            this.texture=0;
             if(("voltexPosition" in set)&&("voltexColor" in set)&&("index" in set)){
                 this.voltexPosition = set.voltexPosition;
                 this.posVbo = this.createVbo(this.voltexPosition);
@@ -67,6 +69,8 @@ window.addEventListener("load",()=>{
                 this.texture = gl.createTexture();
                 this.textureCoord = set.textureCoord;
                 this.texVbo = this.createVbo(this.textureCoord);
+            }else{
+                this.textureCoord=0;
             }
             
             if(("attLocation" in set)&&("uniLocation" in set)){
@@ -74,6 +78,14 @@ window.addEventListener("load",()=>{
                 this.uniLocation = set.uniLocation;
             }else{
                 console.error("fuck location");
+            }
+
+            if("gif" in iset){
+                this.loadGif(iset.gif,iset.num,iset.callback);
+            }else if("img" in iset){
+                this.loadImage(iset.img,iset.callback);
+            }else{
+                this.loaded=1;
             }
 
             this.position = "position" in set ? set.position : [0,0,0];
@@ -85,6 +97,8 @@ window.addEventListener("load",()=>{
             this.m = new matIV();
             this.mMatrix = this.m.identity(this.m.create());   // モデル変換行列
             this.mvpMatrix = this.m.identity(this.m.create()); // 最終座標変換行列
+
+            gl.bindTexture(gl.TEXTURE_2D, null);
         }
     
         get images(){
@@ -99,7 +113,7 @@ window.addEventListener("load",()=>{
         get voltexPosition(){
             return voltexPosition;
         }
-    
+
         /**
          * @param {any} gl
          */
@@ -176,11 +190,23 @@ window.addEventListener("load",()=>{
     
         draw(mode=gl.TRIANGLES){
             //描画
-            if(this.visible){
-                gl.bindTexture(gl.TEXTURE_2D, this.texture);
+            this.updatePosition();
+            this.updateColor();
+            this.updateTextureCoord();
+            this.updateTexture();
+            this.updateIndex();
+            this.updateUniform(vpMatrix);
+            
+            if(this.visible&&this.isloaded){
+                if(this.texture!=0){
+                    gl.bindTexture(gl.TEXTURE_2D, this.texture);
+                }else{
+                    gl.bindTexture(gl.TEXTURE_2D, null);
+                    gl.disableVertexAttribArray(this.attLocation[2]);
+                }
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.Ibo);
                 gl.drawElements(mode, this.index.length, gl.UNSIGNED_SHORT, 0);
-                gl.bindTexture(gl.TEXTURE_2D, null);
+                if(this.texture!=0)gl.bindTexture(gl.TEXTURE_2D, null);
                 gl.bindBuffer(gl.ARRAY_BUFFER, null);
             }
         }
@@ -200,18 +226,25 @@ window.addEventListener("load",()=>{
             gl.bindBuffer(gl.ARRAY_BUFFER, null);
         }
         updateTextureCoord(){
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.texVbo);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.textureCoord), gl.STATIC_DRAW);
-            gl.enableVertexAttribArray(this.attLocation[2]);
-            gl.vertexAttribPointer(this.attLocation[2], 2, gl.FLOAT, false, 0, 0);
-            gl.bindBuffer(gl.ARRAY_BUFFER, null);
-            gl.bindTexture(gl.TEXTURE_2D, null);
+            if(this.textureCoord==0){
+                gl.disableVertexAttribArray(this.attLocation[2]);
+            }else{
+                gl.bindBuffer(gl.ARRAY_BUFFER, this.texVbo);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.textureCoord), gl.STATIC_DRAW);
+                gl.enableVertexAttribArray(this.attLocation[2]);
+                gl.vertexAttribPointer(this.attLocation[2], 2, gl.FLOAT, false, 0, 0);
+                gl.bindBuffer(gl.ARRAY_BUFFER, null);
+                //gl.bindTexture(gl.TEXTURE_2D, null);
+            }
         }
         updateTexture(){
-            gl.bindTexture(gl.TEXTURE_2D, this.texture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.images[this.counter]);
-            gl.generateMipmap(gl.TEXTURE_2D);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            if(this.texture!=0){
+                gl.bindTexture(gl.TEXTURE_2D, this.texture);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.images[this.counter]);
+                gl.generateMipmap(gl.TEXTURE_2D);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+                //gl.bindTexture(gl.TEXTURE_2D, null);
+            }
         }
         updateIndex(){
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.Ibo);
@@ -523,20 +556,20 @@ window.addEventListener("load",()=>{
             this.loaded=0;
             this.noteNum=20;
             this.staffNum=2;
-            this.altNum=12;
+            this.altNum=60;
             this.sharpNum=30;
 
-            this.to=new glGif(this.img);
-            this.to.loadImage("img/to.png",()=>{
-                this.loaded++;
+            this.to=new glGif(this.img,{
+                "img":"img/to.png",
+                "callback":()=>this.loaded++,
             });
             this.size=0.36;
             this.to.position=[-1.87,1.18,0.0];
             this.to.scale=[this.size,this.size,1];
 
-            this.he=new glGif(this.img);
-            this.he.loadImage("img/he.png",()=>{
-                this.loaded++;
+            this.he=new glGif(this.img,{
+                img:"img/he.png",
+                "callback":()=>this.loaded++,
             });
             this.hsize=0.34;
             this.he.position=[-1.85,0.25,0.0];
@@ -564,7 +597,10 @@ window.addEventListener("load",()=>{
             this.ssize=0.16;
             this.sharp=new Array(this.sharpNum);
             for(let i=0;i<this.sharpNum;i++){
-                this.sharp[i]=new glGif(this.img);
+                this.sharp[i]=new glGif(this.img,{
+                    "img":"img/sha.png",
+                    "callback":()=>this.loaded++,
+                });
                 this.sharp[i].position=[-0.15,0.0,0.01];
                 this.sharp[i].scale=[this.ssize,this.ssize,1];
                 this.sharp[i].visible=0;
@@ -658,8 +694,8 @@ window.addEventListener("load",()=>{
             for(let y of this.alt){
                 y.visible=0;
             }
-            let max=0;;
-
+            let tmax=0,tmin=100;
+            let hmax=0,hmin=100;
             for(let x of this.note){
                 if(Note.isSharp(x.root,this.key)){
                     x.sharp=1;
@@ -667,22 +703,36 @@ window.addEventListener("load",()=>{
                     x.sharp=0;
                 }
                 if(x.location=="to"){
-                    if(x.root>79){
-                        let t=Math.floor((Note.getWhiteNum(x.root)-38)/2);
-                        if(max<t)max=t;
-                        
+                    if(x.root>=80){
+                        let tx=Math.floor((Note.getWhiteNum(x.root)-38)/2);
+                        if(tmax<tx)tmax=tx;
+                    }else if(x.root<=60){
+                        let tn=Math.ceil((29-Note.getWhiteNum(x.root))/2);
+                        if(tmin>tn)tmin=tn;
+                    }
+                }else if(x.location=="he"){
+                    if(x.root>=80){
+                        let hx=Math.floor((Note.getWhiteNum(x.root)-38)/2);
+                        if(hmax<hx)hmax=hx;
+                    }else if(x.root<=60){
+                        let hn=Math.ceil((29-Note.getWhiteNum(x.root))/2);
+                        if(hmin>hn)hmin=hn;
                     }
                 }
             }
             let i=0;
             for(let y of this.alt){
-                if(i<max){
+                if(i<tmax&&i<20){
                     y.visible=1;
                     y.position=this.getNotePosition(Note.keyAdd(81/*A5*/,i*2));
-                    console.log(Note.keyAdd(81/*A5*/,i*2))
+                }else if((i-20)<tmin&&i<40){
+                    y.visible=1;
+                    //y.position=this.getNotePosition(Note.keySub(60/*A5*/,(i-20)*2));
+                    console.log(i,Note.keySub(60/*C4*/,(i-20)*2))
                 }else{
                     y.visible=0;
                 }
+                
                 i++;
             }
             this.setSharp();
@@ -693,58 +743,19 @@ window.addEventListener("load",()=>{
         }
         
         draw(vpMatrix){
-            this.staff[0].updatePosition();
-            this.staff[0].updateColor();
-            this.staff[0].updateIndex();
-            this.staff[0].updateUniform(vpMatrix);
             this.staff[0].draw();
-
-            this.staff[1].updatePosition();
-            this.staff[1].updateColor();
-            this.staff[1].updateIndex();
-            this.staff[1].updateUniform(vpMatrix);
             this.staff[1].draw();
 
-            for(let y of this.alt){
-                y.updatePosition();
-                y.updateColor();
-                y.updateIndex();
-                y.updateUniform(vpMatrix);
-                y.draw();
-            }
+            for(let i of this.alt)
+            i.draw();
 
-            this.to.updatePosition();
-            this.to.updateColor();
-            this.to.updateTextureCoord();
-            this.to.updateTexture();
-            this.to.updateIndex();
-            this.to.updateUniform(vpMatrix);
             this.to.draw();
-
-            this.he.updatePosition();
-            this.he.updateColor();
-            this.he.updateTextureCoord();
-            this.he.updateTexture();
-            this.he.updateIndex();
-            this.he.updateUniform(vpMatrix);
             this.he.draw();
 
-            for(let x of this.note){
-                x.updatePosition();
-                x.updateColor();
-                x.updateTextureCoord();
-                x.updateTexture();
-                x.updateIndex();
-                x.updateUniform(vpMatrix);
-                x.draw();
+            for(let i=0;i<this.noteNum;i++){
+                this.note[i].draw();
             }
             for(let i=0;i<this.sharpNum;i++){
-                this.sharp[i].updatePosition();
-                this.sharp[i].updateColor();
-                this.sharp[i].updateTextureCoord();
-                this.sharp[i].updateTexture();
-                this.sharp[i].updateIndex();
-                this.sharp[i].updateUniform(vpMatrix);
                 this.sharp[i].draw();
             }
         }
