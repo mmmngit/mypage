@@ -288,13 +288,12 @@ window.addEventListener("load",()=>{
         }
     }
 
-    class Note extends glGif{//ノート部
-        // constructor(root,scales,length,symbols){
-        //     this.root=isString(root)?this.rootParser(root):root;
-        //     this.scales=isArray(scales)?1:scales;
-        //     this.length=length;
-        //     this.symbols=symbols;
-        // }
+    class Note{
+        constructor(imageSet={},symbolISet={},sharpISet={},altSet={}){
+            this.symbol=new glGif(imageSet,symbolISet);
+            this.sharp=new glGif(imageSet,sharplISet);
+            this.alt=new Array(10).fill(new glGif(altset));
+        }
         set setRoot(num){
             if(isString(num)){
                 num=Note.getNum(num);
