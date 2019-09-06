@@ -348,7 +348,12 @@ window.addEventListener("load",()=>{
             }
         }
         static getPitchName(num,exceptSharp=0){
-            if(isArray(num)){
+            if(isString(num)){
+                if(exceptSharp){
+                    num=this.exceptSharp(num);
+                }
+                return num;
+            }else if(isArray(num)){
                 let t=num.map(x=>this.getPitchName(x));
                 return t;
             }else{
@@ -631,7 +636,7 @@ window.addEventListener("load",()=>{
                 case "A":t=5;break;
                 case "B":t=6;break;
             }
-            let o = +posName.slice(-1);
+            let o = +(posName.slice(-1));
             if(location=="to"){
                 return [x,1.2+(t+o*7-34)*0.05,z];
             }else if(location=="he"){
@@ -641,36 +646,36 @@ window.addEventListener("load",()=>{
             }
             
         }
-        setChord(chord,base=0){
+        setChord(chord,base=0,x=0){
             let n=chord.node.length;
             if(n>0)console.log(chord.node,Note.getPitchName(chord.node))
             let i=0;
-            for(let x of this.note){
+            for(let t of this.note){
                 if(i<n){
-                    x.root=chord.node[i];
-                    x.visible=1;
-                    this.setNotePosition(i,x.root,"to");
+                    t.root=chord.node[i];
+                    t.visible=1;
+                    this.setNotePosition(i,t.root,0,x);
                 }else{
-                    x.root=-1;
-                    x.root=chord.node[i];
-                    x.visible=0;
+                    t.root=-1;
+                    t.root=chord.node[i];
+                    t.visible=0;
                 }
                 i++;
             }
             if(base){
                 this.note[n].visible=1;
-                this.setNotePosition(n,Note.getPitchName(chord.node[n-1])[0]+"2","he");
+                this.setNotePosition(n,Note.getPitchName(chord.node[n-1])[0]+"2","he",x);
             }
             this.noteCheck();
         }
-        setNotePosition(num,posName,location=0){
+        setNotePosition(num,posName,location=0,x=0){
             this.note[num].setRoot=posName;
             if(isString(posName)){
                 posName=Note.getNum(posName);
             }
             if(location==0)location=posName<60?"he":"to";
             this.note[num].setlocation=location;
-            this.note[num].position=this.getNotePosition(posName,location);
+            this.note[num].position=this.getNotePosition(posName,location,x);
         }
         setSharp(){
             let i =0;
@@ -711,11 +716,11 @@ window.addEventListener("load",()=>{
                         if(tmin>tn)tmin=tn;
                     }
                 }else if(x.location=="he"){
-                    if(x.root>=80){
-                        let hx=Math.floor((Note.getWhiteNum(x.root)-38)/2);
+                    if(x.root>=60){
+                        let hx=Math.floor((Note.getWhiteNum(x.root)-27)/2);
                         if(hmax<hx)hmax=hx;
-                    }else if(x.root<=60){
-                        let hn=Math.ceil((29-Note.getWhiteNum(x.root))/2);
+                    }else if(x.root<=40){
+                        let hn=Math.ceil((16-Note.getWhiteNum(x.root))/2);
                         if(hmin>hn)hmin=hn;
                     }
                 }
@@ -725,11 +730,10 @@ window.addEventListener("load",()=>{
                 if(i<tmax&&i<20){
                     y.visible=1;
                     y.position=this.getNotePosition(Note.keyAdd(81/*A5*/,i*2));
-                }else if((i-20)<tmin&&i<40){
+                }else if(tmin!=100&&(i-20)<tmin&&i<40&&i>=20){
                     y.visible=1;
-                    //y.position=this.getNotePosition(Note.keySub(60/*A5*/,(i-20)*2));
-                    console.log(i,Note.keySub(60/*C4*/,(i-20)*2))
-                }else{
+                    y.position=this.getNotePosition(Note.keySub(60/*A5*/,(i-20)*2));
+                }else if(tmin!=100&&(i-20)<tmin&&i<40&&i>=20){
                     y.visible=0;
                 }
                 
@@ -902,7 +906,7 @@ window.addEventListener("load",()=>{
     navigator.requestMIDIAccess({sysex:false}).then(success, failure);
     
     window.addEventListener("click",()=>{
-        score.setChord(Note.randDirtonicChord(60,1),1);
+        score.setChord(Note.randDirtonicChord(60,1),1,0.6);
     })
     fps=60;
     count=0;
@@ -921,7 +925,7 @@ window.addEventListener("load",()=>{
         gl.clear(gl.COLOR_BUFFER_BIT);
         
         score.draw(vpMatrix);
-        
+
         gl.flush();
         // 再帰
 
