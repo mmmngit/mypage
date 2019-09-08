@@ -631,9 +631,9 @@ window.addEventListener("load",()=>{
                 "img":"img/to.png",
                 "callback":()=>this.loaded++,
             });
-            this.size=0.36;
+            this.tsize=0.36;
             this.to.position=[-1.87,1.18,0.0];
-            this.to.scale=[this.size,this.size,1];
+            this.to.scale=[this.tsize,this.tsize,1];
 
             this.he=new glGif(this.img,{
                 img:"img/he.png",
@@ -644,7 +644,7 @@ window.addEventListener("load",()=>{
             this.he.scale=[this.hsize,this.hsize,1];
 
             this.osize=0.065;
-            this.ssize=0.16;
+            this.ssize=0.17;
             this.note=new Array(this.noteNum);
             for(let i=0;i<this.noteNum;i++){
                 this.note[i]=new Notes(this.img,{
