@@ -99,6 +99,13 @@ window.addEventListener("load",()=>{
             this.mvpMatrix = this.m.identity(this.m.create()); // 最終座標変換行列
 
             gl.bindTexture(gl.TEXTURE_2D, null);
+
+            this.updatePosition();
+            this.updateColor();
+            this.updateTextureCoord();
+            this.updateTexture();
+            this.updateIndex();
+            this.updateUniform(vpMatrix);
         }
     
         get images(){
@@ -191,11 +198,12 @@ window.addEventListener("load",()=>{
         draw(mode=gl.TRIANGLES){
             //描画
             this.updatePosition();
-            this.updateColor();
-            this.updateTextureCoord();
+            // this.updateColor();
+            //this.updateTextureCoord();
             this.updateTexture();
-            this.updateIndex();
-            this.updateUniform(vpMatrix);
+            // this.updateIndex();
+            //this.updateUniform(vpMatrix);
+            //テクスチャユニットをつかうこと
             
             if(this.visible&&this.isloaded){
                 if(this.texture!=0){
@@ -288,18 +296,65 @@ window.addEventListener("load",()=>{
         }
     }
 
-    class Note extends glGif{//ノート部
-        // constructor(root,scales,length,symbols){
-        //     this.root=isString(root)?this.rootParser(root):root;
-        //     this.scales=isArray(scales)?1:scales;
-        //     this.length=length;
-        //     this.symbols=symbols;
-        // }
+    class Note{
+        constructor(imageSet={},symbolISet={},sharpISet={},notePosFunction){
+            this.symbol=new glGif(imageSet,symbolISet);
+            this.sharp=new glGif(imageSet,sharpISet);
+            /*altは行に対する要素，一方Noteはシンボル単体
+             *これは不適切Notesクラスを作るべき
+             */
+            this.root=-1;
+            this.isSharp=0;
+            this.location="auto";
+            this.xPos=0;
+            this.getNotePosition=notePosFunction;
+        }
         setRoot(num){
+            if(isString(num)){
+                num=Note.getNum(num);
+            }
             this.root=num;
         }
         setSharp(bool){
             this.sharp=bool;
+        }
+        setLocation(location){
+            this.location=location;
+        }
+        set position(position){
+            this.symbol.position=position;
+            this.sharp.position=[position[0]-0.15,position[1],position[2]];
+        }
+        set x(num){
+            this.xPos=num;
+        }
+        draw(){
+            this.symbol.draw();
+            this.sharp.draw();
+        }
+        check(key=0){
+            if(Note.isSharp(this.root,key)==1){
+                this.sharp.visible=1;
+            }else{
+                this.sharp.visible=0;
+            }
+            if(this.root<0){
+                this.symbol.visible=0;
+                return 0;
+            }else{
+                this.symbol.visible=1;
+                if(this.location=="auto")this.location=this.root<60?"he":"to";
+                this.setNotePosition(this.root,this.location,this.xPos);
+            }
+            return 1;
+        }
+
+        setNotePosition(posName,location=0,x=0){
+            this.xPos=x;
+            if(isString(posName)){
+                posName=Note.getNum(posName);
+            }
+            this.position=this.getNotePosition(posName,location,this.xPos);
         }
         static getFreq(root){
             if(isArray(root)){
@@ -317,26 +372,37 @@ window.addEventListener("load",()=>{
                 let t=root.map(x=>x=this.getNum(x));
                 return t;
             }else{
-                let t=root.toUpperCase().charCodeAt(0)-65;
-                let n=root.slice(1);
-    
+                let t;
+                let n=root.slice(-1);
                 if(0>t||7<t)return 60;
-                if(n[0]==="#"){
+                switch(root[0]){
+                    case "C":t=0;break;
+                    case "D":t=2;break;
+                    case "E":t=4;break;
+                    case "F":t=5;break;
+                    case "G":t=7;break;
+                    case "A":t=9;break;
+                    case "B":t=11;break;
+                }
+                if(root[1]=="#"){
                     t++;
-                    n=n.slice(1);
-                }else if(n[0]==="♭"){
+                }else if(n[1]==="♭"){
                     t--;
-                    n=n.slice(1);
                 }else if(+n!==+n){
                     n=0;
                 }
                 if(!n)n=4;
-                t+=+n*12+10;
+                t+=+n*12+12;
                 return t;
             }
         }
         static getPitchName(num,exceptSharp=0){
-            if(isArray(num)){
+            if(isString(num)){
+                if(exceptSharp){
+                    num=this.exceptSharp(num);
+                }
+                return num;
+            }else if(isArray(num)){
                 let t=num.map(x=>this.getPitchName(x));
                 return t;
             }else{
@@ -360,6 +426,32 @@ window.addEventListener("load",()=>{
                     return t[0]+o;
                 }
                 return t+o;
+            }
+        }
+        static getWhiteNum(posName){
+            let t;
+            if(!posName){console.error("posname is null");return;}
+            if(!isString(posName)){
+                posName=Note.getPitchName(posName);
+            }
+            switch(posName[0]){
+                case "C":t=0;break;
+                case "D":t=1;break;
+                case "E":t=2;break;
+                case "F":t=3;break;
+                case "G":t=4;break;
+                case "A":t=5;break;
+                case "B":t=6;break;
+            }
+            let o = +posName.slice(-1);
+            return t+o*7;
+        }
+
+        static exceptSharp(posName){
+            if(isString(posName)){
+                return posName[0]+posName.slice(-1);
+            }else{
+                return this.getPitchName(posName,1);
             }
         }
     
@@ -412,6 +504,7 @@ window.addEventListener("load",()=>{
             if(this.isSharp(root-1))return this.keySub(root-2,num-1);else return this.keySub(root-1,num-1);
         }
         static isSharp(num,key=0){
+            if(num<0)return 0;
             if(isString(num)){
                 if(num[1]=="#")return 1;else return 0;
             }else{
@@ -431,68 +524,91 @@ window.addEventListener("load",()=>{
         // }
     }
 
+    class Notes{
+        constructor(imageSet={},symbolISet={},sharpISet={},altSet={},notePosFunction){
+            this.note=new Array(10);
+            this.getNotePosition=notePosFunction;
+            for(let i=0;i<10;i++){
+                this.note[i] = new Note(imageSet,symbolISet,sharpISet,notePosFunction);
+                this.note[i].visible=0;
+            }
+            this.alt=new Array(40);
+            for(let i=0;i<40;i++){
+                this.alt[i] = new glGif(altSet);
+                this.alt[i].visible=0;
+            }
+        }
+        set noteScale(scale){
+            for(let x of this.note){
+                x.symbol.scale=scale;
+            }
+        }
+        set sharpScale(scale){
+            for(let x of this.note){
+                x.sharp.scale=scale;
+            }
+        }
+        set root(scales){
+            let t=scales.length;
+            let i=0;
+            for(let x of this.note){
+                if(i<t){
+                    x.setRoot(scales[i]);
+                }else{
+                    x.setRoot(-1);
+                }
+                i++;
+            }
+        }
+        check(key=0){
+            let tmax=0,tmin=100;
+            let hmax=0,hmin=100;
+            for(let x of this.note){
+                if(x.check(key)){//xが有効ノートなら
+                    if(x.location=="to"){
+                        if(x.root>=80){
+                            let tx=Math.floor((Note.getWhiteNum(x.root)-38)/2);
+                            if(tmax<tx)tmax=tx;
+                        }else if(x.root<=60){
+                            let tn=Math.ceil((29-Note.getWhiteNum(x.root))/2);
+                            if(tmin>tn)tmin=tn;
+                        }
+                    }else if(x.location=="he"){
+                        if(x.root>=60){
+                            let hx=Math.floor((Note.getWhiteNum(x.root)-27)/2);
+                            if(hmax<hx)hmax=hx;
+                        }else if(x.root<=40){
+                            let hn=Math.ceil((16-Note.getWhiteNum(x.root))/2);
+                            if(hmin>hn)hmin=hn;
+                        }
+                    }
+                }
+            }
+            let i=0;
+            for(let y of this.alt){
+                y.visible=0;
+                if(i<tmax&&i<10){
+                    y.visible=1;
+                    y.position=this.getNotePosition(Note.keyAdd(81/*A5*/,i*2));
+                }else if(tmin!=100&&(i-10)<tmin&&i<20&&i>=10){
+                    y.visible=1;
+                    y.position=this.getNotePosition(Note.keySub(60/*A5*/,(i-10)*2));
+                }else if(tmin!=100&&(i-20)<tmin&&i<40&&i>=20){
+                    y.visible=0;
+                }
+                i++;
+            }
+        }
+        draw(){
+            for(let x of this.note)x.draw();
+            for(let x of this.alt) x.draw();
+        }
+    }
+
     class Score{
         constructor(attLocation,uniLocation){
             this.key=0;
             this.queue;
-            this.notePosition={
-                "he":{
-                    "A1":[0.0,-0.30,0.0],
-                    "B1":[0.0,-0.25,0.0],
-                    "C2":[0.0,-0.20,0.0],
-                    "D2":[0.0,-0.15,0.0],
-                    "E2":[0.0,-0.10,0.0],
-        
-                    "F2":[0.0,-0.05,0.0],
-                    "G2":[0.0, 0.00,0.0],
-                    "A2":[0.0, 0.05,0.0],
-                    "B2":[0.0, 0.10,0.0],
-                    "C3":[0.0, 0.15,0.0],
-                    "D3":[0.0, 0.20,0.0],
-                    "E3":[0.0, 0.25,0.0],
-                    "F3":[0.0, 0.30,0.0],
-                    "G3":[0.0, 0.35,0.0],
-                    "A3":[0.0, 0.40,0.0],
-                    "B3":[0.0, 0.45,0.0],
-        
-                    "C4":[0.0, 0.50,0.0],
-                    "D4":[0.0, 0.55,0.0],
-                    "E4":[0.0, 0.60,0.0],
-                    "F4":[0.0, 0.65,0.0],
-                    "G4":[0.0, 0.70,0.0],
-                },
-                "to":{
-                    "F3":[0.0, 0.70,0.0],
-                    "G3":[0.0, 0.75,0.0],
-                    "A3":[0.0, 0.80,0.0],
-                    "B3":[0.0, 0.85,0.0],
-                    "C4":[0.0, 0.90,0.0],
-        
-                    "D4":[0.0, 0.95,0.0],
-                    "E4":[0.0, 1.00,0.0],
-                    "F4":[0.0, 1.05,0.0],
-                    "G4":[0.0, 1.10,0.0],
-                    "A4":[0.0, 1.15,0.0],
-                    "B4":[0.0, 1.20,0.0],
-                    "C5":[0.0, 1.25,0.0],
-                    "D5":[0.0, 1.30,0.0],
-                    "E5":[0.0, 1.35,0.0],
-                    "F5":[0.0, 1.40,0.0],
-                    "G5":[0.0, 1.45,0.0],
-        
-                    "A5":[0.0, 1.50,0.0],
-                    "B5":[0.0, 1.55,0.0],
-                    "C6":[0.0, 1.60,0.0],
-                    "D6":[0.0, 1.65,0.0],
-                    "E6":[0.0, 1.70,0.0],
-                    "F6":[0.0, 1.75,0.0],
-                    "G6":[0.0, 1.80,0.0],
-                    "A6":[0.0, 1.85,0.0],
-                    "B6":[0.0, 1.90,0.0],
-                    "C7":[0.0, 1.95,0.0],
-                    //42+black=:62
-                }
-            };
             this.img={
                 "voltexPosition":[-1.0,1.0,0.0,1.0,1.0,0.0,-1.0,-1.0,0.0,1.0,-1.0,0.0],
                 "voltexColor":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0],
@@ -517,21 +633,19 @@ window.addEventListener("load",()=>{
                 "uniLocation":uniLocation
             };
             this.loaded=0;
-            this.noteNum=20;
+            this.noteNum=15;
             this.staffNum=2;
-            this.altNum=12;
-            this.sharpNum=30;
 
             this.to=new glGif(this.img,{
                 "img":"img/to.png",
                 "callback":()=>this.loaded++,
             });
-            this.size=0.36;
+            this.tsize=0.36;
             this.to.position=[-1.87,1.18,0.0];
-            this.to.scale=[this.size,this.size,1];
+            this.to.scale=[this.tsize,this.tsize,1];
 
             this.he=new glGif(this.img,{
-                "img":"img/he.png",
+                img:"img/he.png",
                 "callback":()=>this.loaded++,
             });
             this.hsize=0.34;
@@ -539,81 +653,75 @@ window.addEventListener("load",()=>{
             this.he.scale=[this.hsize,this.hsize,1];
 
             this.osize=0.065;
+            this.ssize=0.17;
             this.note=new Array(this.noteNum);
             for(let i=0;i<this.noteNum;i++){
-                this.note[i]=new Note(this.img,{
+                this.note[i]=new Notes(this.img,{
                     "img":"img/on.png",
                     "callback":()=>this.loaded++,
-                });
-                this.note[i].position=this.notePosition.to.C4;
-                this.note[i].scale=[this.osize,this.osize,1];
+                },{
+                    "img":"img/sha.png",
+                    "callback":()=>this.loaded++,
+                },this.altwataten5,this.getNotePosition);
+                this.note[i].visible=0;
+                this.note[i].noteScale=[this.osize,this.osize,1];
+                this.note[i].sharpScale=[this.ssize,this.ssize,1];
             }
             this.staff=new Array(this.staffNum);
             for(let i=0;i<this.staffNum;i++){
                 this.staff[i]=new glGif(this.wataten5);
-                this.loaded++;
             }
-            this.alt=new Array(this.altNum);
-            for(let i=0;i<this.altNum;i++){
-                this.alt[i]=new glGif(this.altwataten5);
-                this.loaded++;
-            }
-            this.ssize=0.16;
-            this.sharp=new Array(this.sharpNum);
-            for(let i=0;i<this.sharpNum;i++){
-                this.sharp[i]=new glGif(this.img,{
-                    "img":"img/sha.png",
-                    "callback":()=>this.loaded++,
-                });
-                this.sharp[i].position=[-0.15,0.0,0.01];
-                this.sharp[i].scale=[this.ssize,this.ssize,1];
-                this.sharp[i].visible=0;
-            }
-
-            this.alt[0].position=[0.0,0.9,0.0];
-
             this.staff[0].position=[0.0,1.0,0.0];
             this.staff[1].position=[0.0,0.0,0.0];
         }
         get isloaded(){
-            return this.loaded>=this.noteNum+this.altNum+this.staffNum+this.sharpNum+2?"OK":this.loaded;
+            return this.loaded>=this.noteNum+2?1:0;
         }
-        setChord(chord,base=0){
+        getNotePosition(posName,location="to",x=0,z=0){
+            //     "he":"E2":[0.0,-0.10,0.0],
+            //     "to":"C4":[0.0, 0.90,0.0],
+            let t;
+            if(!isString(posName)){
+                posName=Note.getPitchName(posName);
+            }
+            switch(posName[0]){
+                case "C":t=0;break;
+                case "D":t=1;break;
+                case "E":t=2;break;
+                case "F":t=3;break;
+                case "G":t=4;break;
+                case "A":t=5;break;
+                case "B":t=6;break;
+            }
+            let o = +(posName.slice(-1));
+            if(location=="to"){
+                return [x,1.2+(t+o*7-34)*0.05,z];
+            }else if(location=="he"){
+                return [x,0.8+(t+o*7-34)*0.05,z];
+            }else{
+                return [0,0,0];
+            }
+        }
+        setChord(chord,base=0,x=0){
             let n=chord.node.length;
-            console.log(chord.node,Note.getPitchName(chord.node))
-            for(let i=0;i<this.noteNum;i++){
-                if(i<n){
-                    this.note[i].root=chord.node[i];
-                    this.note[i].visible=1;
-                    this.setNotePosition(i,this.note[i].root);
-                }else{
-                    this.note[i].visible=0;
-                }
-            }
-            if(base){
-                this.note[n].visible=1;
-                this.setNotePosition(n,Note.getPitchName(chord.node[n-1])[0]+"2","he");
-            }
-            this.noteCheck();
+            if(n>0)console.log(chord.node,Note.getPitchName(chord.node))
+            let i=0;
+            //暫定
+            this.note[0].root=chord.node;
+            this.note[0].check();
+            // if(base){
+            //     this.note[n].visible=1;
+            //     this.setNotePosition(n,Note.getPitchName(chord.node[n-1])[0]+"2","he",x);
+            // }
         }
-        setNotePosition(num,posName,location="to"){
-            this.note[num].root=posName;
+        setNotePosition(num,posName,location=0,x=0){
+            this.note[num].setRoot=posName;
             if(isString(posName)){
                 posName=Note.getNum(posName);
-            }else{
-
             }
-            this.note[num].position=[0.0,this.notePosition[location][Note.getPitchName(posName,1)][1],0.0];
-        }
-        setSharp(){
-            for(let i=0;i<this.noteNum;i++){
-                if(this.note[i].sharp&&this.note[i].visible){
-                    this.sharp[i].visible=1;
-                    this.sharp[i].position=[-0.15,this.note[i].position[1],0.01];
-                }else{
-                    this.sharp[i].visible=0;
-                }
-            }
+            if(location==0)location=posName<60?"he":"to";
+            this.note[num].setlocation=location;
+            this.note[num].position=this.getNotePosition(posName,location,x);
         }
         setkey(n){
             if(isString(n)){
@@ -622,31 +730,20 @@ window.addEventListener("load",()=>{
                 this.key=n%12;
             }
         }
-        noteCheck(){
-            for(let i=0;i<this.noteNum;i++){
-                if(Note.isSharp(this.note[i].root,this.key)){
-                    this.note[i].sharp=1;
-                }else{
-                    this.note[i].sharp=0;
-                }
-            }
-            this.setSharp();
+
+        play(){
+
         }
         
         draw(vpMatrix){
             this.staff[0].draw();
             this.staff[1].draw();
 
-            this.alt[0].draw();
-
             this.to.draw();
             this.he.draw();
 
-            for(let i=0;i<this.noteNum;i++){
-                this.note[i].draw();
-            }
-            for(let i=0;i<this.sharpNum;i++){
-                this.sharp[i].draw();
+            for(let x of this.note){
+                x.draw();
             }
         }
     }
@@ -686,7 +783,6 @@ window.addEventListener("load",()=>{
     uniform   mat4 mvpMatrix;
     varying   vec4 vColor;
     varying   vec2 vTextureCoord;
-
     void main(void){
         vColor        = color;
         vTextureCoord = textureCoord;
@@ -700,7 +796,6 @@ window.addEventListener("load",()=>{
 
     var fSource = [`
     precision mediump float;
-
     uniform sampler2D texture;
     varying vec4      vColor;
     varying vec2      vTextureCoord;
@@ -731,7 +826,9 @@ window.addEventListener("load",()=>{
 
     //テクスチャオブジェクト作成
     gl.activeTexture(gl.TEXTURE0);
-
+    gl.activeTexture(gl.TEXTURE1);
+    gl.activeTexture(gl.TEXTURE2);
+    
     //mvpMatrix作成
     var m = new matIV();
     var vMatrix = m.identity(m.create());
@@ -751,6 +848,30 @@ window.addEventListener("load",()=>{
     gl.clear(gl.COLOR_BUFFER_BIT);
     mx = 0.5; my = 0.5;
     startTime = new Date().getTime();
+
+    //input function
+    let key=new Array(256).fill(0);
+    let inputKeyToScale={
+        32:"rand",
+        90:"C4",
+        83:"C#4",
+        88:"D4",
+        68:"D#4",
+        67:"E4",
+        86:"F4",
+        71:"F#4",
+        66:"G4",
+        72:"G#4",
+        78:"A4",
+        74:"A#4",
+        77:"B4",
+        188:"C5",
+        190:"D5",
+        187:"D#5",
+        191:"E5",
+        186:"E#5",
+        226:"F5",
+    }
 
     //Midi keybord Setup
     let midi;
@@ -773,7 +894,7 @@ window.addEventListener("load",()=>{
         });
     }
     //MIDIデバイスからメッセージが送られる時に実行
-    let keyInputqueue=new Array();
+    let keyInputqueue=new Array;
     function onMidiMessage(event){
         //console.log(event);
         var str = '';
@@ -792,13 +913,30 @@ window.addEventListener("load",()=>{
     navigator.requestMIDIAccess({sysex:false}).then(success, failure);
     
     window.addEventListener("click",()=>{
-        score.setChord(Note.randDirtonicChord(61,1),1);
+        score.setChord(Note.randDirtonicChord(60,1),1,0.6);
     })
+    window.addEventListener('keydown', (e)=>{
+        key[e.keyCode]++;
+        if(e.altKey){
+            //alt
+        }else if(key[e.keyCode]==1){
+            if(e.keyCode in inputKeyToScale)
+                keyInputqueue.push(inputKeyToScale[e.keyCode])
+        }
+        score.setChord({node:keyInputqueue});
+    }, false);
+    window.addEventListener('keyup', (e)=>{
+        key[e.keyCode]=0;
+        keyInputqueue=keyInputqueue.filter(x=>x!=inputKeyToScale[e.keyCode]);
+        score.setChord({node:keyInputqueue});
+    }, false);
+
     fps=60;
     count=0;
+    console.log("unit size="+gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS));
     loading();
     function loading(){
-        if(score.isloaded=="OK")render();
+        if(score.isloaded)render();
         else setTimeout(loading,1000/fps);
     }
     function render(){
@@ -811,7 +949,7 @@ window.addEventListener("load",()=>{
         gl.clear(gl.COLOR_BUFFER_BIT);
         
         score.draw(vpMatrix);
-        
+
         gl.flush();
         // 再帰
 
