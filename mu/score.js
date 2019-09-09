@@ -98,16 +98,8 @@ window.addEventListener("load",()=>{
             this.mMatrix = this.m.identity(this.m.create());   // モデル変換行列
             this.mvpMatrix = this.m.identity(this.m.create()); // 最終座標変換行列
 
-            gl.bindTexture(gl.TEXTURE_2D, null);
-
-            this.updatePosition();
-            this.updateColor();
-            this.updateTextureCoord();
-            this.updateTexture();
-            this.updateIndex();
-            this.updateUniform(vpMatrix);
+            //gl.bindTexture(gl.TEXTURE_2D, null);
         }
-    
         get images(){
             return this.images;
         }
@@ -132,6 +124,9 @@ window.addEventListener("load",()=>{
          */
         set position(vec3){
             this.position = vec3;
+        }
+        set xPos(num){
+            this.position = [num,this.position[1],this.position[2]];
         }
         /**
          * @param {[Array]} arr
@@ -198,11 +193,11 @@ window.addEventListener("load",()=>{
         draw(mode=gl.TRIANGLES){
             //描画
             this.updatePosition();
-            // this.updateColor();
-            //this.updateTextureCoord();
-            this.updateTexture();
-            // this.updateIndex();
-            //this.updateUniform(vpMatrix);
+            this.updateColor();
+            this.updateTextureCoord();
+            //this.updateTexture();
+            this.updateIndex();
+            this.updateUniform(vpMatrix);
             //テクスチャユニットをつかうこと
             
             if(this.visible&&this.isloaded){
@@ -215,7 +210,7 @@ window.addEventListener("load",()=>{
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.Ibo);
                 gl.drawElements(mode, this.index.length, gl.UNSIGNED_SHORT, 0);
                 if(this.texture!=0)gl.bindTexture(gl.TEXTURE_2D, null);
-                gl.bindBuffer(gl.ARRAY_BUFFER, null);
+                //gl.bindBuffer(gl.ARRAY_BUFFER, null);
             }
         }
 
@@ -268,7 +263,7 @@ window.addEventListener("load",()=>{
             this.m.multiply(vpMatrix, this.mMatrix, this.mvpMatrix); // m を掛ける
             //uniform関連
             gl.uniformMatrix4fv(this.uniLocation[0], false, this.mvpMatrix);
-            gl.uniform1i(this.uniLocation[1],0);
+            //gl.uniform1i(this.uniLocation[1],0);
         }
         
         createVbo(data){
@@ -300,9 +295,6 @@ window.addEventListener("load",()=>{
         constructor(imageSet={},symbolISet={},sharpISet={},notePosFunction){
             this.symbol=new glGif(imageSet,symbolISet);
             this.sharp=new glGif(imageSet,sharpISet);
-            /*altは行に対する要素，一方Noteはシンボル単体
-             *これは不適切Notesクラスを作るべき
-             */
             this.root=-1;
             this.isSharp=0;
             this.location="auto";
@@ -328,8 +320,10 @@ window.addEventListener("load",()=>{
         set x(num){
             this.xPos=num;
         }
-        draw(){
+        drawSymbol(){
             this.symbol.draw();
+        }
+        drawSharp(){
             this.sharp.draw();
         }
         check(key=0){
@@ -530,13 +524,15 @@ window.addEventListener("load",()=>{
             this.getNotePosition=notePosFunction;
             for(let i=0;i<10;i++){
                 this.note[i] = new Note(imageSet,symbolISet,sharpISet,notePosFunction);
-                this.note[i].visible=0;
+                this.note[i].symbol.visible=0;
+                this.note[i].sharp.visible=0;
             }
             this.alt=new Array(40);
             for(let i=0;i<40;i++){
                 this.alt[i] = new glGif(altSet);
                 this.alt[i].visible=0;
             }
+            this.xPosition=0;
         }
         set noteScale(scale){
             for(let x of this.note){
@@ -559,6 +555,12 @@ window.addEventListener("load",()=>{
                 }
                 i++;
             }
+        }
+        set xPos(num){
+            for(let x of this.note){
+                x.xPos=num;
+            }
+            this.xPosition=num;
         }
         check(key=0){
             let tmax=0,tmin=100;
@@ -589,18 +591,23 @@ window.addEventListener("load",()=>{
                 y.visible=0;
                 if(i<tmax&&i<10){
                     y.visible=1;
-                    y.position=this.getNotePosition(Note.keyAdd(81/*A5*/,i*2));
+                    y.position=this.getNotePosition(Note.keyAdd(81/*A5*/,i*2),this.xPosition);
                 }else if(tmin!=100&&(i-10)<tmin&&i<20&&i>=10){
                     y.visible=1;
-                    y.position=this.getNotePosition(Note.keySub(60/*A5*/,(i-10)*2));
+                    y.position=this.getNotePosition(Note.keySub(60/*A5*/,(i-10)*2),this.xPosition);
                 }else if(tmin!=100&&(i-20)<tmin&&i<40&&i>=20){
                     y.visible=0;
                 }
                 i++;
             }
         }
-        draw(){
-            for(let x of this.note)x.draw();
+        drawNoteSymbol(){
+            for(let x of this.note)x.drawSymbol();
+        }
+        drawNoteSharp(){
+            for(let x of this.note)x.drawSharp();
+        }
+        drawAlt(){
             for(let x of this.alt) x.draw();
         }
     }
@@ -608,7 +615,7 @@ window.addEventListener("load",()=>{
     class Score{
         constructor(attLocation,uniLocation){
             this.key=0;
-            this.queue;
+            this.queue=new Array();
             this.img={
                 "voltexPosition":[-1.0,1.0,0.0,1.0,1.0,0.0,-1.0,-1.0,0.0,1.0,-1.0,0.0],
                 "voltexColor":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0],
@@ -617,7 +624,7 @@ window.addEventListener("load",()=>{
                 "attLocation":attLocation,
                 "uniLocation":uniLocation
             };
-            let len=2; let d=0.1;
+            let len=2.1; let d=0.1;
             this.wataten5={
                 "voltexPosition":[-len,0.0,0.0, len, 0.0,0.0,-len,0.01,0.0, len, 0.01,0.0,-len,d+0.0,0.0, len,d+0.0,0.0,-len,d+0.01,0.0, len,d+0.01,0.0,-len,2*d+0.0,0.0, len, 2*d+0.0,0.0,-len,2*d+0.01,0.0, len, 2*d+0.01,0.0,-len,3*d+0.0,0.0, len, 3*d+0.0,0.0,-len,3*d+0.01,0.0, len, 3*d+0.01,0.0,-len,4*d+0.0,0.0, len, 4*d+0.0,0.0,-len,4*d+0.01,0.0, len, 4*d+0.01,0.0],
                 "voltexColor":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0],
@@ -632,8 +639,9 @@ window.addEventListener("load",()=>{
                 "attLocation":attLocation,
                 "uniLocation":uniLocation
             };
+            this.queuePos=0;
             this.loaded=0;
-            this.noteNum=15;
+            this.noteNum=16;
             this.staffNum=2;
 
             this.to=new glGif(this.img,{
@@ -658,15 +666,27 @@ window.addEventListener("load",()=>{
             for(let i=0;i<this.noteNum;i++){
                 this.note[i]=new Notes(this.img,{
                     "img":"img/on.png",
-                    "callback":()=>this.loaded++,
+                    "callback":()=>{
+                        this.loaded++;
+                    },
                 },{
                     "img":"img/sha.png",
-                    "callback":()=>this.loaded++,
+                    "callback":()=>{
+                        this.loaded++;
+                    },
                 },this.altwataten5,this.getNotePosition);
                 this.note[i].visible=0;
+                
                 this.note[i].noteScale=[this.osize,this.osize,1];
                 this.note[i].sharpScale=[this.ssize,this.ssize,1];
+                for(let obj of this.note[i].note){
+                    obj.sharp.visible=0;
+                    obj.symbol.texture=this.note[0].note[0].symbol.texture;
+                    obj.sharp.texture=this.note[0].note[0].sharp.texture;
+                }
+                
             }
+
             this.staff=new Array(this.staffNum);
             for(let i=0;i<this.staffNum;i++){
                 this.staff[i]=new glGif(this.wataten5);
@@ -702,13 +722,21 @@ window.addEventListener("load",()=>{
                 return [0,0,0];
             }
         }
+        setQueue(chord){
+            this.queue.push(chord.node);
+            if(this.queue.length>=10)this.queue.shift();
+        }
         setChord(chord,base=0,x=0){
             let n=chord.node.length;
             if(n>0)console.log(chord.node,Note.getPitchName(chord.node))
             let i=0;
             //暫定
-            this.note[0].root=chord.node;
-            this.note[0].check();
+            this.queue.push(chord.node);
+            if(this.queue.length>=this.noteNum)this.queue.shift();
+
+            // this.note[0].root=chord.node;
+            // this.note[0].check();
+            this.play();
             // if(base){
             //     this.note[n].visible=1;
             //     this.setNotePosition(n,Note.getPitchName(chord.node[n-1])[0]+"2","he",x);
@@ -731,19 +759,43 @@ window.addEventListener("load",()=>{
             }
         }
 
-        play(){
+        setInput(chord){
+            this.note[this.noteNum-1].root=chord.node;
+            this.note[this.noteNum-1].xPos=-1.1;
+            this.note[this.noteNum-1].check();
+        }
 
+        play(){
+            let i=0;
+            for(let x of this.queue){
+                this.note[i].root=x;
+                this.note[i].xPos=i/5-0.75;
+                this.note[i].check();
+                i++;
+            }
         }
         
         draw(vpMatrix){
             this.staff[0].draw();
             this.staff[1].draw();
 
+            this.to.updateTexture();
             this.to.draw();
+            this.he.updateTexture();
             this.he.draw();
 
+            this.note[0].note[0].symbol.updateTexture();
             for(let x of this.note){
-                x.draw();
+                x.drawNoteSymbol();
+            }
+            
+            this.note[0].note[0].sharp.updateTexture();
+            for(let x of this.note){
+                x.drawNoteSharp();
+            }
+
+            for(let x of this.note){
+                x.drawAlt();
             }
         }
     }
@@ -826,8 +878,8 @@ window.addEventListener("load",()=>{
 
     //テクスチャオブジェクト作成
     gl.activeTexture(gl.TEXTURE0);
-    gl.activeTexture(gl.TEXTURE1);
-    gl.activeTexture(gl.TEXTURE2);
+    //gl.activeTexture(gl.TEXTURE1);
+    //gl.activeTexture(gl.TEXTURE2);
     
     //mvpMatrix作成
     var m = new matIV();
@@ -917,18 +969,18 @@ window.addEventListener("load",()=>{
     })
     window.addEventListener('keydown', (e)=>{
         key[e.keyCode]++;
-        if(e.altKey){
-            //alt
-        }else if(key[e.keyCode]==1){
+        if(key[e.keyCode]<=1){
             if(e.keyCode in inputKeyToScale)
                 keyInputqueue.push(inputKeyToScale[e.keyCode])
+            //score.setChord({node:keyInputqueue});
+            score.setInput({node:keyInputqueue});
         }
-        score.setChord({node:keyInputqueue});
     }, false);
     window.addEventListener('keyup', (e)=>{
         key[e.keyCode]=0;
         keyInputqueue=keyInputqueue.filter(x=>x!=inputKeyToScale[e.keyCode]);
-        score.setChord({node:keyInputqueue});
+        //score.setChord({node:keyInputqueue});
+        score.setInput({node:keyInputqueue})
     }, false);
 
     fps=60;
@@ -949,7 +1001,7 @@ window.addEventListener("load",()=>{
         gl.clear(gl.COLOR_BUFFER_BIT);
         
         score.draw(vpMatrix);
-
+        score.setChord(Note.randDirtonicChord(60+irand(8),1),1);
         gl.flush();
         // 再帰
 
