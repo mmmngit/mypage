@@ -614,8 +614,6 @@ window.addEventListener("load",()=>{
 
     class Score{
         constructor(attLocation,uniLocation){
-            this.key=0;
-            this.queue=new Array();
             this.img={
                 "voltexPosition":[-1.0,1.0,0.0,1.0,1.0,0.0,-1.0,-1.0,0.0,1.0,-1.0,0.0],
                 "voltexColor":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0],
@@ -639,7 +637,10 @@ window.addEventListener("load",()=>{
                 "attLocation":attLocation,
                 "uniLocation":uniLocation
             };
+            this.key=0;
+            this.queue=new Array();
             this.queuePos=0;
+            this.queueAddF=1;
             this.loaded=0;
             this.noteNum=16;
             this.staffNum=2;
@@ -728,11 +729,11 @@ window.addEventListener("load",()=>{
         }
         setChord(chord,base=0,x=0){
             let n=chord.node.length;
-            if(n>0)console.log(chord.node,Note.getPitchName(chord.node))
+            //if(n>0)console.log(chord.node,Note.getPitchName(chord.node))
             let i=0;
             //暫定
-            this.queue.push(chord.node);
-            if(this.queue.length>=this.noteNum)this.queue.shift();
+            if(this.queueAddF)this.queue.push(chord.node);
+            if(this.queue.length>this.noteNum-2)this.queueAddF=0;
 
             // this.note[0].root=chord.node;
             // this.note[0].check();
@@ -763,6 +764,10 @@ window.addEventListener("load",()=>{
             this.note[this.noteNum-1].root=chord.node;
             this.note[this.noteNum-1].xPos=-1.1;
             this.note[this.noteNum-1].check();
+            console.log(this.note[this.noteNum-1].root)
+            if(this.note[this.noteNum-1].root==this.queue[this.noteNum-2]){
+                console.log("aaa")
+            }
         }
 
         play(){
