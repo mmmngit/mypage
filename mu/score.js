@@ -22,6 +22,32 @@ window.addEventListener("load",()=>{
         "m9":[0,2,3,7,10]
     }
 
+    class Midiparcer{
+        constructor(data){
+            this.data=data;
+            let dv=new DataView(data);
+            this.header ={
+                //チャンクタイプ
+                chunktype:dv.getInt8(0,3),
+                //ヘッダサイズ
+                headersize : dv.getInt8(4,8),
+                //SMFフォーマット
+                format : data[9],
+                //トラックの数
+                tracksize : dv.getInt8(10,12),
+                //時間単位
+                timeunit : data[12],
+            }
+            console.log(this.header)
+            //data=data.subarray(13);
+            this.track=new Array(this.header.tracksize);
+            console.log(data)
+            for(let x of this.track){
+                
+            }
+        }
+    }
+
     class glGif{
         visible;
         counter;
@@ -899,6 +925,37 @@ window.addEventListener("load",()=>{
     m.multiply(pMatrix, vMatrix, vpMatrix);
 
     var score=new Score(attLocation,uniLocation);
+    
+    var drop=document.getElementById("drop");
+    drop.addEventListener('dragover', function(event) {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'copy';
+        showDropping();
+    });
+
+    drop.addEventListener('dragleave', function(event) {
+            hideDropping();
+    });
+        function hideDropping() {
+            drop.classList.remove('dropover');
+    }   
+    function showDropping() {
+        drop.classList.add('dropover');
+    }
+    let midiFile;
+    drop.addEventListener("drop",(e)=>{
+        e.preventDefault();
+        let file=e.dataTransfer.files[0];
+        let reader = new FileReader();
+        reader.readAsArrayBuffer(file);
+        reader.onload = function() {   
+                //読み込んだ結果を型付配列に
+                var ar = new ArrayBuffer(reader.result);
+                //console.log(ar)
+                midiFile=new Midiparcer(ar);
+        }
+        //parseFile(file);
+    })
 
     // その他の初期化
     gl.clearColor(1.0, 1.0, 1.0, 1.0);
@@ -909,7 +966,6 @@ window.addEventListener("load",()=>{
     //input function
     let key=new Array(256).fill(0);
     let inputKeyToScale={
-        32:"rand",
         90:"C4",
         83:"C#4",
         88:"D4",
@@ -931,10 +987,10 @@ window.addEventListener("load",()=>{
     }
 
     //Midi keybord Setup
-    let midi;
+    let midiKeybord;
     //通信成功時
     function success(midiAccess){
-        midi = midiAccess;
+        midiKeybord = midiAccess;
         setInput(midiAccess);
         console.log("MIDI READY");
     }
