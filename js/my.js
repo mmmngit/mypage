@@ -30,3 +30,17 @@ function diffArray(a, b) {
     }
     return num==i?true:false;
 } 
+function getInt(ar){
+    var value = 0;
+    for (var  i=0;i<ar.length;i++){
+        value = (value << 8) + ar[i];
+    }
+    return value;
+}
+function snap16(ar){
+    var value=new Array();
+    for (var  i=0;i<ar.length;i++){
+        value
+    }
+    return value;
+}

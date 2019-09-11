@@ -24,27 +24,31 @@ window.addEventListener("load",()=>{
 
     class Midiparcer{
         constructor(data){
-            this.data=data;
-            let dv=new DataView(data);
+            console.log(data)
             this.header ={
                 //チャンクタイプ
-                chunktype:dv.getInt8(0,3),
+                chunktype:getInt(data.subarray(0,4)),
                 //ヘッダサイズ
-                headersize : dv.getInt8(4,8),
+                size :getInt(data.subarray(4,8)),
                 //SMFフォーマット
-                format : data[9],
+                format : getInt(data.subarray(8,10)),
                 //トラックの数
-                tracksize : dv.getInt8(10,12),
+                tracksize : getInt(data.subarray(10,12)),
                 //時間単位
-                timeunit : data[12],
+                timeunit : getInt(data.subarray(12,14)),
             }
             console.log(this.header)
-            //data=data.subarray(13);
+            data=data.subarray(14);
             this.track=new Array(this.header.tracksize);
-            console.log(data)
-            for(let x of this.track){
-                
+            this.track[0]={
+                chunktype:getInt(data.subarray(0,4)),
+                size:getInt(data.subarray(4,8)),
+                data:null,
             }
+            console.log(this.track[0])
+            // for(let x of this.track){
+                
+            // }
         }
     }
 
@@ -955,8 +959,7 @@ window.addEventListener("load",()=>{
         reader.readAsArrayBuffer(file);
         reader.onload = function() {   
                 //読み込んだ結果を型付配列に
-                var ar = new ArrayBuffer(reader.result);
-                //console.log(ar)
+                var ar = new Uint8Array(reader.result);
                 midiFile=new Midiparcer(ar);
         }
         //parseFile(file);
