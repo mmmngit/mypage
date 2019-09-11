@@ -20,7 +20,11 @@
             <input type="checkbox" id="fSharp"><label for="fSharp">on->include #</label>
             <input type="checkbox" id="fChord"><label for="fChord">on->include chord</label>
         </p>
-        <p align="center"><canvas class="c" id="score"></canvas></p>
+        <div id="drop" effectAllowed="move">
+            <p align="center"><canvas class="c" id="score"></canvas></p>
+            <input type="file" accept="audio/midi">
+        </div>
+
         <p align="center"><canvas class="c" id="canvas"></canvas></p>
         
         <p>
