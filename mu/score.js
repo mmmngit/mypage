@@ -463,7 +463,7 @@ window.addEventListener("load",()=>{
             }
         }
         static randDirtonicChord(root,octave=1){
-            let t=irand(7*octave);
+            let t=irand(7*octave-1);
             let n;
             switch(t%7){
                 case 0:case 3:case 4:
@@ -561,6 +561,9 @@ window.addEventListener("load",()=>{
                 x.xPos=num;
             }
             this.xPosition=num;
+        }
+        get root(){
+            return this.note.map(e => e=e.root).filter(e=>e>1);
         }
         check(key=0){
             let tmax=0,tmin=100;
@@ -729,11 +732,11 @@ window.addEventListener("load",()=>{
         }
         setChord(chord,base=0,x=0){
             let n=chord.node.length;
-            //if(n>0)console.log(chord.node,Note.getPitchName(chord.node))
+            if(n>0&&this.queueAddF)console.log(chord.node,Note.getPitchName(chord.node))
             let i=0;
             //暫定
             if(this.queueAddF)this.queue.push(chord.node);
-            if(this.queue.length>this.noteNum-2)this.queueAddF=0;
+            if(this.queue.length>this.noteNum-2)this.queueAddF=0;//this.queue.shift()
 
             // this.note[0].root=chord.node;
             // this.note[0].check();
@@ -764,9 +767,11 @@ window.addEventListener("load",()=>{
             this.note[this.noteNum-1].root=chord.node;
             this.note[this.noteNum-1].xPos=-1.1;
             this.note[this.noteNum-1].check();
-            console.log(this.note[this.noteNum-1].root)
-            if(this.note[this.noteNum-1].root==this.queue[this.noteNum-2]){
-                console.log("aaa")
+            console.log(this.note[this.noteNum-1].root,this.queue[0])
+            console.log(Note.getPitchName(this.note[this.noteNum-1].root),Note.getPitchName(this.queue[0]))            
+            if(diffArray(this.note[this.noteNum-1].root,this.queue[0])){
+                this.queue.shift();
+                this.queueAddF=1;
             }
         }
 
@@ -1006,7 +1011,7 @@ window.addEventListener("load",()=>{
         gl.clear(gl.COLOR_BUFFER_BIT);
         
         score.draw(vpMatrix);
-        score.setChord(Note.randDirtonicChord(60+irand(8),1),1);
+        score.setChord(Note.randDirtonicChord(60,1));
         gl.flush();
         // 再帰
 
