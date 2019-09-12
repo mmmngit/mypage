@@ -24,10 +24,66 @@ window.addEventListener("load",()=>{
 
     class Midiparcer{
         constructor(data){
-            console.log(data)
+            this.metaEvent={
+                0x00:{name:"Sequence number",
+                      function:(t)=>{return getInt(t)}
+                    },
+                0x01:{name:"Text event",
+                      function:(t)=>{return getChar(t)},
+                    },
+                0x02:{name:"Copyright notice",
+                      function:null,
+                    },
+                0x03:{name:"Sequence or track name",
+                      function:null,
+                    },
+                0x04:{name:"Instrument name",
+                      function:(t)=>{return getChar(t)},
+                    },
+                0x05:{name:"Lyric text",
+                      function:(t)=>{return getChar(t)},
+                    },
+                0x06:{name:"Marker text",
+                      function:(t)=>{return getChar(t)},
+                    },
+                0x07:{name:"Cue point",
+                      function:null,
+                    },
+                0x08:{name:"Program Name",
+                      function:(t)=>{return getChar(t)},
+                },
+                0x09:{name:"Device Name",
+                      function:(t)=>{return getChar(t)},
+                },
+                0x20:{name:"MIDI channel prefix assignment",
+                      function:null,
+                    },
+                0x21:{name:"Port",
+                    function:null,
+                },
+                0x2F:{name:"End of track",
+                      function:null,
+                    },
+                0x51:{name:"Tempo setting",
+                      function:(t)=>{return 60000000/getInt(t)},
+                    },
+                0x54:{name:"SMPTE offset",
+                      function:null,
+                    },
+                0x58:{name:"Time signature",
+                      function:null,
+                    },
+                0x59:{name:"Key signature",
+                      function:(t)=>{return this.getKey(t[0],t[1])},
+                    },
+                0x7F:{name:"Sequencer specific event",
+                      function:null,
+                    },
+            }
+            console.log(data);
             this.header ={
                 //チャンクタイプ
-                chunktype:getInt(data.subarray(0,4)),
+                chunktype:getxInt(data.subarray(0,4)),
                 //ヘッダサイズ
                 size :getInt(data.subarray(4,8)),
                 //SMFフォーマット
@@ -37,18 +93,110 @@ window.addEventListener("load",()=>{
                 //時間単位
                 timeunit : getInt(data.subarray(12,14)),
             }
-            console.log(this.header)
+            console.log("header",this.header)
             data=data.subarray(14);
             this.track=new Array(this.header.tracksize);
-            this.track[0]={
-                chunktype:getInt(data.subarray(0,4)),
-                size:getInt(data.subarray(4,8)),
-                data:null,
+            let i=0;
+            for(let x of this.track){
+                x={
+                    chunktype:getxInt(data.subarray(0,4)),
+                    size:getInt(data.subarray(4,8)),
+                    data:null,
+                }
+                x.data=data.subarray(8,x.size+8);
+                data=data.subarray(x.size+8);
+                //this.trackParcer(x.data)
+                console.log("track"+i,x.data)
+                console.log("track"+i,this.trackParcer(x.data))
+                i++;
             }
-            console.log(this.track[0])
-            // for(let x of this.track){
-                
-            // }
+            
+        }
+        headerParcer(data){
+
+        }
+        trackParcer(data){
+            let track={};
+            let i=0,delta=0;
+            while(data.length>0){
+
+                //getdeltatime
+                let d=this.getDeltaTime(data);
+                data=d.ar;
+
+                if(data[0]==255){//meta
+                    let eventname,size;
+                    i=0;
+                    let t={
+                        ticks:delta+d.deltatime,
+                        data:null,
+                    }
+                    if(data[1] in this.metaEvent){
+                        eventname=this.metaEvent[data[1]].name;
+                        size=data[2];
+                        if(this.metaEvent[data[1]].function)
+                        t.data=this.metaEvent[data[1]].function(data.subarray(3,3+size));
+                        else
+                        t.data=data.subarray(3,3+size);
+                    }
+                    if(!(eventname in track)){
+                        track[eventname]=[];
+                    }
+                    console.log(eventname,size,t);
+                    track[eventname].push(t);
+                    delta=t.ticks;
+                    data=data.subarray(3+size);
+                    if(eventname==="End of track")return track;
+                }else{
+                    let t={
+                        ticks:delta+d.deltatime,
+                        data:null,
+                        velocity:null,
+                    }
+                    console.log(data[0])
+                }
+            }
+            return track;
+        }
+        getDeltaTime(ar){
+            var value=0;
+            var i=0;
+            while(ar[i]>=0x80){
+                var a = (ar[i]&0x7F);
+                value = value<<7|a;
+                i++;
+            }
+            //最後の値を連結
+            value = value<<7|ar[i];
+            //計算したデルタタイムと配列の残りをリターン
+            return {ar:ar.subarray(i+1),deltatime:value}
+        }
+        getKey(num,mi){
+            let t,m;
+            if(mi){
+                m="minor";
+            }else{
+                m="major";
+            }
+            if(num>240)num-=256;
+            switch(num){
+                case 0: t='C'; break;
+                case 1: t='G';break;
+                case 2: t='D'; break;
+                case 3: t='A'; break;
+                case 4: t='E'; break;
+                case 5: t='B'; break;
+                case 6: t='F#';break;
+                case 7: t='C#'; break;
+                case -1: t='F';break;
+                case -2: t='B♭'; break;
+                case -3:t='E♭';break;
+                case -4:t='A♭'; break;
+                case -5:t='D♭'; break;
+                case -6:t='G♭'; break;
+                case -7:t='C♭'; break;
+            }
+            return {key:t,mi:m}
         }
     }
 
@@ -956,6 +1104,7 @@ window.addEventListener("load",()=>{
         e.preventDefault();
         let file=e.dataTransfer.files[0];
         let reader = new FileReader();
+        console.log(file.name);
         reader.readAsArrayBuffer(file);
         reader.onload = function() {   
                 //読み込んだ結果を型付配列に
@@ -1055,6 +1204,7 @@ window.addEventListener("load",()=>{
     fps=60;
     count=0;
     console.log("unit size="+gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS));
+    console.log("\u1123\u1112");
     loading();
     function loading(){
         if(score.isloaded)render();

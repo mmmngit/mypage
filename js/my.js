@@ -37,6 +37,20 @@ function getInt(ar){
     }
     return value;
 }
+function getChar(ar){
+    var value = 0;
+    for (var  i=0;i<ar.length;i++){
+        value += String.fromCharCode(ar[i]);
+    }
+    return value;
+}
+function getxInt(ar){
+    var value = 0;
+    for (var  i=0;i<ar.length;i++){
+        value = (value << 8) + ar[i];
+    }
+    return value.toString(16);
+}
 function snap16(ar){
     var value=new Array();
     for (var  i=0;i<ar.length;i++){
