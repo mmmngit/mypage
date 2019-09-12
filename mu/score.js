@@ -153,7 +153,7 @@ window.addEventListener("load",()=>{
                         data:null,
                         velocity:null,
                     }
-                    console.log(data[0])
+                    console.log(data[0].toString(16))
                 }
             }
             return track;
@@ -1204,7 +1204,7 @@ window.addEventListener("load",()=>{
     fps=60;
     count=0;
     console.log("unit size="+gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS));
-    console.log("\u1123\u1112");
+    
     loading();
     function loading(){
         if(score.isloaded)render();

@@ -49,6 +49,7 @@ function getxInt(ar){
     for (var  i=0;i<ar.length;i++){
         value = (value << 8) + ar[i];
     }
+    console.log(value)
     return value.toString(16);
 }
 function snap16(ar){
