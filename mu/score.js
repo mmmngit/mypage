@@ -32,10 +32,10 @@ window.addEventListener("load",()=>{
                       function:(t)=>{return getChar(t)},
                     },
                 0x02:{name:"Copyright notice",
-                      function:null,
+                      function:(t)=>{return getChar(t)},
                     },
                 0x03:{name:"Sequence or track name",
-                      function:null,
+                      function:(t)=>{return getChar(t)},
                     },
                 0x04:{name:"Instrument name",
                       function:(t)=>{return getChar(t)},
@@ -47,7 +47,7 @@ window.addEventListener("load",()=>{
                       function:(t)=>{return getChar(t)},
                     },
                 0x07:{name:"Cue point",
-                      function:null,
+                      function:(t)=>{return getChar(t)},
                     },
                 0x08:{name:"Program Name",
                       function:(t)=>{return getChar(t)},
@@ -79,8 +79,34 @@ window.addEventListener("load",()=>{
                 0x7F:{name:"Sequencer specific event",
                       function:null,
                     },
+            };
+            this.MIDIEvent={
+                0x80:{name:"Note off",
+                      function:(t)=>{return {key:t[0],velocity:t[1]}}
+                },
+                0x90:{name:"Note on",
+                      function:(t)=>{return {key:t[0],velocity:t[1]}}
+                },
+                0xA0:{name:"Polyphonic aftertouch",
+                      function:(t)=>{return {key:t[0],velocity:t[1]}}
+                },
+                0xB0:{name:"Control mode change",
+                      function:(t)=>{return {function:t[0],value:t[1]}}
+                },
+                0xC0:{name:"Program change",
+                      function:(t)=>{return {Program:t[0]}}
+                },
+                0xD0:{name:"Channel aftertouch",
+                      function:(t)=>{return {pressure:t[0]}}
+                },
+                0xE0:{name:"Pitch wheel range",
+                      function:(t)=>{return {LSB:t[0],MSB:t[1]}}
+                },
+                0xF0:{nume:"SysEx",
+                      function:(t)=>{return {data:t}}
+                }
             }
-            console.log(data);
+            //console.log(data);
             this.header ={
                 //チャンクタイプ
                 chunktype:getxInt(data.subarray(0,4)),
@@ -93,31 +119,31 @@ window.addEventListener("load",()=>{
                 //時間単位
                 timeunit : getInt(data.subarray(12,14)),
             }
-            console.log("header",this.header)
+            //console.log("header",this.header)
             data=data.subarray(14);
             this.track=new Array(this.header.tracksize);
-            let i=0;
-            for(let x of this.track){
-                x={
+            for(let i=0;i<this.track.length;i++){
+                this.track[i]={
+                    name:"track"+i,
                     chunktype:getxInt(data.subarray(0,4)),
                     size:getInt(data.subarray(4,8)),
                     data:null,
                 }
-                x.data=data.subarray(8,x.size+8);
-                data=data.subarray(x.size+8);
-                //this.trackParcer(x.data)
-                console.log("track"+i,x.data)
-                console.log("track"+i,this.trackParcer(x.data))
-                i++;
+                this.track[i].data=data.subarray(8,this.track[i].size+8);
+                data=data.subarray(this.track[i].size+8);
+                
+                this.track[i].data=this.trackParcer(this.track[i].data);
             }
-            
+            this.MIDIData={
+                header:this.header,
+                track:this.track,
+            }
+            console.log("MIDIData",this.MIDIData);
         }
-        headerParcer(data){
 
-        }
         trackParcer(data){
             let track={};
-            let i=0,delta=0;
+            let delta=0;
             while(data.length>0){
 
                 //getdeltatime
@@ -126,9 +152,9 @@ window.addEventListener("load",()=>{
 
                 if(data[0]==255){//meta
                     let eventname,size;
-                    i=0;
                     let t={
                         ticks:delta+d.deltatime,
+                        duration:d.deltatime,
                         data:null,
                     }
                     if(data[1] in this.metaEvent){
@@ -142,18 +168,33 @@ window.addEventListener("load",()=>{
                     if(!(eventname in track)){
                         track[eventname]=[];
                     }
-                    console.log(eventname,size,t);
                     track[eventname].push(t);
                     delta=t.ticks;
                     data=data.subarray(3+size);
                     if(eventname==="End of track")return track;
                 }else{
+                    let eventname,size,tmp=data[0];
                     let t={
                         ticks:delta+d.deltatime,
+                        duration:d.deltatime,
+                        channel:tmp&0x0F,
                         data:null,
-                        velocity:null,
                     }
-                    console.log(data[0].toString(16))
+                    tmp=tmp&0xF0;
+                    if(tmp in this.MIDIEvent){
+                        eventname=this.MIDIEvent[tmp].name;
+                        size=(tmp==0xC0||tmp==0xD0)?2:3;
+                        if(this.MIDIEvent[tmp].function)
+                        t.data=this.MIDIEvent[tmp].function(data.subarray(1,1+size));
+                        else
+                        t.data=data.subarray(1,1+size);
+                    }
+                    if(!(eventname in track)){
+                        track[eventname]=[];
+                    }
+                    track[eventname].push(t);
+                    delta=t.ticks;
+                    data=data.subarray(size);
                 }
             }
             return track;
@@ -180,23 +221,46 @@ window.addEventListener("load",()=>{
             }
             if(num>240)num-=256;
             switch(num){
-                case 0: t='C'; break;
-                case 1: t='G';break;
-                case 2: t='D'; break;
-                case 3: t='A'; break;
-                case 4: t='E'; break;
-                case 5: t='B'; break;
-                case 6: t='F#';break;
+                case 0: t='C';  break;
+                case 1: t='G';  break;
+                case 2: t='D';  break;
+                case 3: t='A';  break;
+                case 4: t='E';  break;
+                case 5: t='B';  break;
+                case 6: t='F#'; break;
                 case 7: t='C#'; break;
-                case -1: t='F';break;
-                case -2: t='B♭'; break;
-                case -3:t='E♭';break;
+                case -1:t='F';  break;
+                case -2:t='B♭'; break;
+                case -3:t='E♭'; break;
                 case -4:t='A♭'; break;
                 case -5:t='D♭'; break;
                 case -6:t='G♭'; break;
                 case -7:t='C♭'; break;
             }
-            return {key:t,mi:m}
+            return {key:t,mi:m};
+        }
+
+        getNoteArray(trackNum){
+            
+            let obj=this.MIDIData.track[trackNum].data["Note on"];
+            let size=obj.length;
+            let tick=0;
+            let Notes=[];
+            let t={
+                keys:[],
+                duration:0,
+            };
+            for(let i=0;i<size;i++){
+                if(obj[i].duration==0){
+                    t.keys.push(obj[i].data.key);
+                }else{
+                    Notes.push(Object.assign({},t));
+                    t.keys=[];
+                    t.keys.push(obj[i].data.key);
+                    t.duration=obj[i].duration;
+                }
+            }
+            return Notes;
         }
     }
 
@@ -493,7 +557,7 @@ window.addEventListener("load",()=>{
         }
         set position(position){
             this.symbol.position=position;
-            this.sharp.position=[position[0]-0.15,position[1],position[2]];
+            this.sharp.position=[position[0]-0.105,position[1],position[2]];
         }
         set x(num){
             this.xPos=num;
@@ -515,7 +579,8 @@ window.addEventListener("load",()=>{
                 return 0;
             }else{
                 this.symbol.visible=1;
-                if(this.location=="auto")this.location=this.root<60?"he":"to";
+                //(this.location=="auto")
+                this.location=this.root<60?"he":"to";
                 this.setNotePosition(this.root,this.location,this.xPos);
             }
             return 1;
@@ -637,7 +702,7 @@ window.addEventListener("load",()=>{
                 let t=irand(max,min);
                 let a=t%12;
                 if(!fSharp)while(a<5&&a%2==1||a>5&&a%2==0){t=irand(max,min);a=t%12;};
-                return {node:t,name:null};
+                return {keys:t,name:null};
             }
         }
         static randDirtonicChord(root,octave=1){
@@ -654,7 +719,7 @@ window.addEventListener("load",()=>{
                     n=this.chordGenerator("m-5",this.keyAdd(root,t));
                 break;
             }
-            return {node:n};
+            return {keys:n};
         }
     
         static chordGenerator(chordName,root){
@@ -772,10 +837,10 @@ window.addEventListener("load",()=>{
                 y.visible=0;
                 if(i<tmax&&i<10){
                     y.visible=1;
-                    y.position=this.getNotePosition(Note.keyAdd(81/*A5*/,i*2),this.xPosition);
+                    y.position=this.getNotePosition(Note.keyAdd(81/*A5*/,i*2),0,this.xPosition);
                 }else if(tmin!=100&&(i-10)<tmin&&i<20&&i>=10){
                     y.visible=1;
-                    y.position=this.getNotePosition(Note.keySub(60/*A5*/,(i-10)*2),this.xPosition);
+                    y.position=this.getNotePosition(Note.keySub(60/*A5*/,(i-10)*2),0,this.xPosition);
                 }else if(tmin!=100&&(i-20)<tmin&&i<40&&i>=20){
                     y.visible=0;
                 }
@@ -803,7 +868,7 @@ window.addEventListener("load",()=>{
                 "attLocation":attLocation,
                 "uniLocation":uniLocation
             };
-            let len=2.1; let d=0.1;
+            let len=3; let d=0.1;
             this.wataten5={
                 "voltexPosition":[-len,0.0,0.0, len, 0.0,0.0,-len,0.01,0.0, len, 0.01,0.0,-len,d+0.0,0.0, len,d+0.0,0.0,-len,d+0.01,0.0, len,d+0.01,0.0,-len,2*d+0.0,0.0, len, 2*d+0.0,0.0,-len,2*d+0.01,0.0, len, 2*d+0.01,0.0,-len,3*d+0.0,0.0, len, 3*d+0.0,0.0,-len,3*d+0.01,0.0, len, 3*d+0.01,0.0,-len,4*d+0.0,0.0, len, 4*d+0.0,0.0,-len,4*d+0.01,0.0, len, 4*d+0.01,0.0],
                 "voltexColor":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0],
@@ -825,13 +890,13 @@ window.addEventListener("load",()=>{
             this.loaded=0;
             this.noteNum=16;
             this.staffNum=2;
-
+            this.toheX=-2.8
             this.to=new glGif(this.img,{
                 "img":"img/to.png",
                 "callback":()=>this.loaded++,
             });
             this.tsize=0.36;
-            this.to.position=[-1.87,1.18,0.0];
+            this.to.position=[this.toheX-0.02,1.18,0.0];
             this.to.scale=[this.tsize,this.tsize,1];
 
             this.he=new glGif(this.img,{
@@ -839,7 +904,7 @@ window.addEventListener("load",()=>{
                 "callback":()=>this.loaded++,
             });
             this.hsize=0.34;
-            this.he.position=[-1.85,0.25,0.0];
+            this.he.position=[this.toheX,0.25,0.0];
             this.he.scale=[this.hsize,this.hsize,1];
 
             this.osize=0.065;
@@ -866,7 +931,6 @@ window.addEventListener("load",()=>{
                     obj.symbol.texture=this.note[0].note[0].symbol.texture;
                     obj.sharp.texture=this.note[0].note[0].sharp.texture;
                 }
-                
             }
 
             this.staff=new Array(this.staffNum);
@@ -879,7 +943,7 @@ window.addEventListener("load",()=>{
         get isloaded(){
             return this.loaded>=this.noteNum+2?1:0;
         }
-        getNotePosition(posName,location="to",x=0,z=0){
+        getNotePosition(posName,location=0,x=0,z=0){
             //     "he":"E2":[0.0,-0.10,0.0],
             //     "to":"C4":[0.0, 0.90,0.0],
             let t;
@@ -896,6 +960,7 @@ window.addEventListener("load",()=>{
                 case "B":t=6;break;
             }
             let o = +(posName.slice(-1));
+            if(location==0)location=Note.getNum(posName)<60?"he":"to";
             if(location=="to"){
                 return [x,1.2+(t+o*7-34)*0.05,z];
             }else if(location=="he"){
@@ -904,17 +969,17 @@ window.addEventListener("load",()=>{
                 return [0,0,0];
             }
         }
-        setQueue(chord){
-            this.queue.push(chord.node);
-            if(this.queue.length>=10)this.queue.shift();
+        setNotesToQueue(Notes){
+            this.queue=Notes;
         }
         setChord(chord,base=0,x=0){
-            let n=chord.node.length;
-            if(n>0&&this.queueAddF)console.log(chord.node,Note.getPitchName(chord.node))
+            console.log(chord)
+            let n=chord.keys.length;
+            if(n>0&&this.queueAddF)console.log(chord.keys,Note.getPitchName(chord.keys))
             let i=0;
             //暫定
-            if(this.queueAddF)this.queue.push(chord.node);
-            if(this.queue.length>this.noteNum-2)this.queueAddF=0;//this.queue.shift()
+            if(this.queueAddF)this.queue.push(chord);
+            //if(this.queue.length>this.noteNum-2)this.queueAddF=0;//this.queue.shift()
 
             // this.note[0].root=chord.node;
             // this.note[0].check();
@@ -923,6 +988,10 @@ window.addEventListener("load",()=>{
             //     this.note[n].visible=1;
             //     this.setNotePosition(n,Note.getPitchName(chord.node[n-1])[0]+"2","he",x);
             // }
+            let chorda={
+                keys:[],
+                duration:null,//この形にすること
+            }
         }
         setNotePosition(num,posName,location=0,x=0){
             this.note[num].setRoot=posName;
@@ -942,12 +1011,12 @@ window.addEventListener("load",()=>{
         }
 
         setInput(chord){
-            this.note[this.noteNum-1].root=chord.node;
-            this.note[this.noteNum-1].xPos=-1.1;
+            this.note[this.noteNum-1].root=chord.keys;
+            this.note[this.noteNum-1].xPos=-1.90;
             this.note[this.noteNum-1].check();
-            console.log(this.note[this.noteNum-1].root,this.queue[0])
-            console.log(Note.getPitchName(this.note[this.noteNum-1].root),Note.getPitchName(this.queue[0]))            
-            if(diffArray(this.note[this.noteNum-1].root,this.queue[0])){
+            console.log(this.note[this.noteNum-1].root,this.queue[0].keys)
+            console.log(Note.getPitchName(this.note[this.noteNum-1].root),Note.getPitchName(this.queue[0].keys))            
+            if(diffArray(this.note[this.noteNum-1].root,this.queue[0].keys)){
                 this.queue.shift();
                 this.queueAddF=1;
             }
@@ -956,9 +1025,11 @@ window.addEventListener("load",()=>{
         play(){
             let i=0;
             for(let x of this.queue){
-                this.note[i].root=x;
-                this.note[i].xPos=i/5-0.75;
-                this.note[i].check();
+                if(i<this.noteNum-1){
+                    this.note[i].root=x.keys;
+                    this.note[i].xPos=i/3.25-1.60;
+                    this.note[i].check();
+                }else break;
                 i++;
             }
         }
@@ -1099,7 +1170,7 @@ window.addEventListener("load",()=>{
     function showDropping() {
         drop.classList.add('dropover');
     }
-    let midiFile;
+    let midiObject;
     drop.addEventListener("drop",(e)=>{
         e.preventDefault();
         let file=e.dataTransfer.files[0];
@@ -1109,13 +1180,14 @@ window.addEventListener("load",()=>{
         reader.onload = function() {   
                 //読み込んだ結果を型付配列に
                 var ar = new Uint8Array(reader.result);
-                midiFile=new Midiparcer(ar);
+                midiObject=new Midiparcer(ar);
+                let Notes=midiObject.getNoteArray(1);
+                score.setNotesToQueue(Notes);
         }
-        //parseFile(file);
     })
 
     // その他の初期化
-    gl.clearColor(1.0, 1.0, 1.0, 1.0);
+    gl.clearColor(0.9, 1.0, 1.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     mx = 0.5; my = 0.5;
     startTime = new Date().getTime();
@@ -1177,7 +1249,8 @@ window.addEventListener("load",()=>{
         if(event.data[0]==128){
             keyInputqueue=keyInputqueue.filter(x=>x!=event.data[1]);
         }
-        score.setChord({node:keyInputqueue});
+        score.setInput({keys:keyInputqueue});
+        score.play();
         //console.log(str);
     }
     navigator.requestMIDIAccess({sysex:false}).then(success, failure);
@@ -1191,14 +1264,16 @@ window.addEventListener("load",()=>{
             if(e.keyCode in inputKeyToScale)
                 keyInputqueue.push(inputKeyToScale[e.keyCode])
             //score.setChord({node:keyInputqueue});
-            score.setInput({node:keyInputqueue});
+            score.setInput({keys:keyInputqueue});
+            score.play();
         }
     }, false);
     window.addEventListener('keyup', (e)=>{
         key[e.keyCode]=0;
         keyInputqueue=keyInputqueue.filter(x=>x!=inputKeyToScale[e.keyCode]);
         //score.setChord({node:keyInputqueue});
-        score.setInput({node:keyInputqueue})
+        score.setInput({keys:keyInputqueue})
+        score.play();
     }, false);
 
     fps=60;
@@ -1220,7 +1295,7 @@ window.addEventListener("load",()=>{
         gl.clear(gl.COLOR_BUFFER_BIT);
         
         score.draw(vpMatrix);
-        score.setChord(Note.randDirtonicChord(60,1));
+        if(score.queue.length<15)score.setChord(Note.randDirtonicChord(60,1));
         gl.flush();
         // 再帰
 
@@ -1228,3 +1303,13 @@ window.addEventListener("load",()=>{
         setTimeout(render,1000/fps);
     }
 });
+
+/* 縦線をついかすること
+ * 
+ *
+ *
+ * 
+ * 
+ * 
+ * 
+*/
