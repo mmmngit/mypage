@@ -122,6 +122,8 @@ window.addEventListener("load",()=>{
             //console.log("header",this.header)
             data=data.subarray(14);
             this.track=new Array(this.header.tracksize);
+            this.trackNum=1;
+            let maxNoteNum=0;
             for(let i=0;i<this.track.length;i++){
                 this.track[i]={
                     name:"track"+i,
@@ -133,6 +135,15 @@ window.addEventListener("load",()=>{
                 data=data.subarray(this.track[i].size+8);
                 
                 this.track[i].data=this.trackParcer(this.track[i].data);
+                
+                let tmp=0
+                if("Note on" in this.track[i].data)
+                    tmp=this.track[i].data["Note on"].length;
+
+                if(maxNoteNum<tmp){
+                    this.trackNum=i;
+                    maxNoteNum=tmp;
+                }
             }
             this.MIDIData={
                 header:this.header,
@@ -153,7 +164,7 @@ window.addEventListener("load",()=>{
                 if(data[0]==255){//meta
                     let eventname,size;
                     let t={
-                        ticks:delta+d.deltatime,
+                        tick:delta+d.deltatime,
                         duration:d.deltatime,
                         data:null,
                     }
@@ -169,13 +180,13 @@ window.addEventListener("load",()=>{
                         track[eventname]=[];
                     }
                     track[eventname].push(t);
-                    delta=t.ticks;
+                    delta=t.tick;
                     data=data.subarray(3+size);
                     if(eventname==="End of track")return track;
                 }else{
                     let eventname,size,tmp=data[0];
                     let t={
-                        ticks:delta+d.deltatime,
+                        tick:delta+d.deltatime,
                         duration:d.deltatime,
                         channel:tmp&0x0F,
                         data:null,
@@ -193,7 +204,7 @@ window.addEventListener("load",()=>{
                         track[eventname]=[];
                     }
                     track[eventname].push(t);
-                    delta=t.ticks;
+                    delta=t.tick;
                     data=data.subarray(size);
                 }
             }
@@ -241,25 +252,37 @@ window.addEventListener("load",()=>{
         }
 
         getNoteArray(trackNum){
-            
-            let obj=this.MIDIData.track[trackNum].data["Note on"];
+            if(!trackNum)trackNum=this.trackNum;
+            console.log("track"+this.trackNum)
+            let obj;
+            try{
+                obj=this.MIDIData.track[trackNum].data["Note on"];
+            }catch{
+                console.error("track["+trackNum+"] don't have any Notes");
+                return [{keys:[],duration:0}]
+            }
             let size=obj.length;
-            let tick=0;
+            let duration=0,tick=0;
             let Notes=[];
             let t={
                 keys:[],
+                tick:0,
                 duration:0,
             };
+            tick=obj[0].tick;
             for(let i=0;i<size;i++){
-                if(obj[i].duration==0){
+                if(obj[i].tick==tick){
                     t.keys.push(obj[i].data.key);
                 }else{
                     Notes.push(Object.assign({},t));
+                    tick=obj[i].tick;
                     t.keys=[];
                     t.keys.push(obj[i].data.key);
-                    t.duration=obj[i].duration;
+                    t.duration=obj[0].tick-tick;
+                    t.tick=obj[0].tick;
                 }
             }
+            console.log(Notes);
             return Notes;
         }
     }
@@ -973,7 +996,6 @@ window.addEventListener("load",()=>{
             this.queue=Notes;
         }
         setChord(chord,base=0,x=0){
-            console.log(chord)
             let n=chord.keys.length;
             if(n>0&&this.queueAddF)console.log(chord.keys,Note.getPitchName(chord.keys))
             let i=0;
@@ -1011,7 +1033,8 @@ window.addEventListener("load",()=>{
         }
 
         setInput(chord){
-            this.note[this.noteNum-1].root=chord.keys;
+            if(chord.keys=="skip")this.note[this.noteNum-1].root=this.queue[0].keys;
+            else this.note[this.noteNum-1].root=chord.keys;
             this.note[this.noteNum-1].xPos=-1.90;
             this.note[this.noteNum-1].check();
             console.log(this.note[this.noteNum-1].root,this.queue[0].keys)
@@ -1181,8 +1204,9 @@ window.addEventListener("load",()=>{
                 //読み込んだ結果を型付配列に
                 var ar = new Uint8Array(reader.result);
                 midiObject=new Midiparcer(ar);
-                let Notes=midiObject.getNoteArray(1);
+                let Notes=midiObject.getNoteArray(2);
                 score.setNotesToQueue(Notes);
+                score.play();
         }
     })
 
@@ -1195,6 +1219,7 @@ window.addEventListener("load",()=>{
     //input function
     let key=new Array(256).fill(0);
     let inputKeyToScale={
+        32:"skip",
         90:"C4",
         83:"C#4",
         88:"D4",
@@ -1260,11 +1285,12 @@ window.addEventListener("load",()=>{
     })
     window.addEventListener('keydown', (e)=>{
         key[e.keyCode]++;
-        if(key[e.keyCode]<=1){
+        if(key[e.keyCode]==1){
             if(e.keyCode in inputKeyToScale)
                 keyInputqueue.push(inputKeyToScale[e.keyCode])
             //score.setChord({node:keyInputqueue});
-            score.setInput({keys:keyInputqueue});
+            if(e.keyCode!=32)score.setInput({keys:keyInputqueue});
+            else score.setInput({keys:"skip"});
             score.play();
         }
     }, false);

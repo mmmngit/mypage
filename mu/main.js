@@ -169,7 +169,7 @@ window.addEventListener("load",function(){
     let key=new Array(256).fill(0);
     let canvas;
     let gl;
-    let w=window.innerWidth*0.8;
+    let w=window.innerWidth*0.1;
     let h=w;
     let fSharp=0,fChord=0;
     let synth;
@@ -225,9 +225,9 @@ window.addEventListener("load",function(){
 
     function imputKey(num,up=0){
         switch(num){
-            case 32:
-            !up?sound(Note.rand(max,min,fSharp,fChord)):null;
-            break;
+            //case 32:
+            //!up?sound(Note.rand(max,min,fSharp,fChord)):null;
+            //break;
             case 90:
             !up?synth.triggerAttack("C4"):synth.triggerRelease("C4");
             break;
