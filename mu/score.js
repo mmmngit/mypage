@@ -1204,7 +1204,7 @@ window.addEventListener("load",()=>{
                 //読み込んだ結果を型付配列に
                 var ar = new Uint8Array(reader.result);
                 midiObject=new Midiparcer(ar);
-                let Notes=midiObject.getNoteArray(2);
+                let Notes=midiObject.getNoteArray(1);
                 score.setNotesToQueue(Notes);
                 score.play();
         }
@@ -1285,12 +1285,16 @@ window.addEventListener("load",()=>{
     })
     window.addEventListener('keydown', (e)=>{
         key[e.keyCode]++;
+        if(e.keyCode==32){
+            score.setInput({keys:"skip"});
+            score.play();
+        }
         if(key[e.keyCode]==1){
             if(e.keyCode in inputKeyToScale)
                 keyInputqueue.push(inputKeyToScale[e.keyCode])
             //score.setChord({node:keyInputqueue});
-            if(e.keyCode!=32)score.setInput({keys:keyInputqueue});
-            else score.setInput({keys:"skip"});
+            score.setInput({keys:keyInputqueue});
+            
             score.play();
         }
     }, false);
@@ -1331,7 +1335,7 @@ window.addEventListener("load",()=>{
 });
 
 /* 縦線をついかすること
- * 
+ * なめらかにうごかすこと
  *
  *
  * 
