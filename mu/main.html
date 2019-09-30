@@ -10,30 +10,49 @@
         <script src="../js/math.min.js" type="text/javascript"></script>
         <script src="sc.css" type="text/css"></script>
         <script src="score.js" type="text/javascript"></script>
-        <script src="main.js" type="text/javascript"></script>
+        
     </head>
 
     <body>
-        <audio src="audio/c3.mp3"></audio>
-        <h1>Score Trainer</h1>
-        <p>
-            <input type="checkbox" id="fSharp"><label for="fSharp">on->include #</label>
-            <input type="checkbox" id="fChord"><label for="fChord">on->include chord</label>
-        </p>
+        <style type="text/css">
+            body{
+                background:#000;
+                color: #555;
+            }
+            body #score{
+                position:fixed;
+                overflow: hidden;
+                top:0;
+                left:0;
+            }
+            #container{
+                position: absolute;
+            	top:50%;
+            }
+        </style>
+        
         <div id="drop" effectAllowed="move">
-            <p align="center"><canvas class="c" id="score"></canvas></p>
+            <p align="center"><canvas class="c" id="score" style="position: fixed"></canvas></p>
             <input type="file" accept="audio/midi">
         </div>
 
-        <p align="center"><canvas class="c" id="canvas"></canvas></p>
+        <div id="container">
+        <h1>Score Trainer</h1>
+        <p>
+            to:<input type="number" id="trackNum1" value="2" min="1">
+            he:<input type="number" id="trackNum2" value="3" min="1">
+        </p>
+
+        <p align="center"><canvas class="c" id="canvas" hidden></canvas></p>
         
         <p>
-            <input type="text" id="ans" value="( ◠‿◠ )<ここに答えが出ます" disabled>
-            <input type="button" id="dakyo" value="ボタン">
+            <input type="text" id="ans" value="( ◠‿◠ )<ここに答えが出ます" disabled hidden>
+            <input type="button" id="dakyo" value="ボタン" hidden>
         </p>
         <p>
             space　黒いところクリック（タップ）　ボタン:音が鳴ります．答えも出ます． 
         </p>
+        </div>
         
 </body>
 </html>
