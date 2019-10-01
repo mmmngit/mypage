@@ -16,8 +16,12 @@
     <body>
         <style type="text/css">
             body{
-                background:#000;
+                background:rgb(229.5,255, 255);
                 color: #555;
+                user-select: none;
+                -moz-user-select: none; /* Firefox */
+                -webkit-user-select: none; /* Safari、Chromeなど */
+                -ms-user-select: none; /* IE10かららしい */
             }
             body #score{
                 position:fixed;
@@ -27,8 +31,15 @@
             }
             #container{
                 position: absolute;
-            	top:50%;
+            	bottom:10%;
             }
+            #field{
+                color: #555;
+            }
+            #field input{
+                width:50px;
+            }
+            
         </style>
         
         <div id="drop" effectAllowed="move">
@@ -38,19 +49,21 @@
 
         <div id="container">
         <h1>Score Trainer</h1>
-        <p>
-            to:<input type="number" id="trackNum1" value="2" min="1">
-            he:<input type="number" id="trackNum2" value="3" min="1">
+        <p id="field">
+            <label id="MIDIName">Please Drop MIDI on Score</label><br>
+            to:<input type="number" id="trackNum1" value="1" min="0">
+            he:<input type="number" id="trackNum2" value="2" min="0">
+            <input type="button" id="MIDIGo" value="MIDI">
         </p>
 
         <p align="center"><canvas class="c" id="canvas" hidden></canvas></p>
         
         <p>
             <input type="text" id="ans" value="( ◠‿◠ )<ここに答えが出ます" disabled hidden>
-            <input type="button" id="dakyo" value="ボタン" hidden>
+            <input type="button" id="dakyo" value="aaa" hidden>
         </p>
         <p>
-            space　黒いところクリック（タップ）　ボタン:音が鳴ります．答えも出ます． 
+             
         </p>
         </div>
         
