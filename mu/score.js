@@ -270,6 +270,7 @@ window.addEventListener("load",()=>{
                 duration:0,
             };
             tick=obj[0].tick;
+            console.log(obj[105])
             for(let i=0;i<size;i++){
                 if(obj[i].tick==tick){
                     t.keys.push(obj[i].data.key);
@@ -279,7 +280,6 @@ window.addEventListener("load",()=>{
                     t.keys=[];
                     t.keys.push(obj[i].data.key);
                     t.duration=obj[0].tick-tick;
-                    t.tick=obj[0].tick;
                 }
             }
             console.log(Notes);
@@ -822,6 +822,11 @@ window.addEventListener("load",()=>{
                 i++;
             }
         }
+        set symbolVisible(bool){
+            for(let x of this.note){
+                x.visible=bool;
+            }
+        }
         set xPos(num){
             for(let x of this.note){
                 x.xPos=num;
@@ -1033,28 +1038,42 @@ window.addEventListener("load",()=>{
         }
 
         setInput(chord){
-            if(chord.keys=="skip")this.note[this.noteNum-1].root=this.queue[0].keys;
+            if(chord.keys=="skip"){
+                if(this.queue.length>0){
+                    this.note[this.noteNum-1].root=this.queue[0].keys;
+                    this.queue.shift();
+                }
+            }
             else this.note[this.noteNum-1].root=chord.keys;
             this.note[this.noteNum-1].xPos=-1.90;
             this.note[this.noteNum-1].check();
-            console.log(this.note[this.noteNum-1].root,this.queue[0].keys)
-            console.log(Note.getPitchName(this.note[this.noteNum-1].root),Note.getPitchName(this.queue[0].keys))            
-            if(diffArray(this.note[this.noteNum-1].root,this.queue[0].keys)){
-                this.queue.shift();
-                this.queueAddF=1;
+
+            if(this.queue.length>0){
+                console.log(this.note[this.noteNum-1].root,this.queue[0].keys)
+                console.log(Note.getPitchName(this.note[this.noteNum-1].root),Note.getPitchName(this.queue[0].keys))            
+                if(diffArray(this.note[this.noteNum-1].root,this.queue[0].keys)){
+                    this.queue.shift();
+                    this.queueAddF=1;
+                }
             }
         }
 
         play(){
-            let i=0;
-            for(let x of this.queue){
-                if(i<this.noteNum-1){
-                    this.note[i].root=x.keys;
+            for(let i=0;i<this.noteNum-1;i++){
+                if(i<this.queue.length){
+                    this.note[i].root=this.queue[i].keys;
                     this.note[i].xPos=i/3.25-1.60;
                     this.note[i].check();
-                }else break;
-                i++;
+                }else{
+                    this.note[i].symbolVisible=0;
+                    this.note[i].check();
+                };
             }
+        }
+        MIDItoScore(MIDIData){
+            let notes=MIDIData.getNoteArray(1);
+            this.setNotesToQueue(notes);
+            this.play();
         }
         
         draw(vpMatrix){
@@ -1204,9 +1223,10 @@ window.addEventListener("load",()=>{
                 //読み込んだ結果を型付配列に
                 var ar = new Uint8Array(reader.result);
                 midiObject=new Midiparcer(ar);
-                let Notes=midiObject.getNoteArray(1);
-                score.setNotesToQueue(Notes);
-                score.play();
+                //let Notes=midiObject.getNoteArray(1);
+                //score.setNotesToQueue(Notes);
+                //score.play();
+                score.MIDItoScore(midiObject);
         }
     })
 
@@ -1288,7 +1308,8 @@ window.addEventListener("load",()=>{
         if(e.keyCode==32){
             score.setInput({keys:"skip"});
             score.play();
-        }
+            return false;
+        }else
         if(key[e.keyCode]==1){
             if(e.keyCode in inputKeyToScale)
                 keyInputqueue.push(inputKeyToScale[e.keyCode])
@@ -1302,8 +1323,10 @@ window.addEventListener("load",()=>{
         key[e.keyCode]=0;
         keyInputqueue=keyInputqueue.filter(x=>x!=inputKeyToScale[e.keyCode]);
         //score.setChord({node:keyInputqueue});
-        score.setInput({keys:keyInputqueue})
-        score.play();
+        if(e.keyCode!=32){
+            score.setInput({keys:keyInputqueue})
+            score.play();
+        }
     }, false);
 
     fps=60;
@@ -1325,7 +1348,7 @@ window.addEventListener("load",()=>{
         gl.clear(gl.COLOR_BUFFER_BIT);
         
         score.draw(vpMatrix);
-        if(score.queue.length<15)score.setChord(Note.randDirtonicChord(60,1));
+        //if(score.queue.length>5&&score.queue.length<20)score.setChord(Note.randDirtonicChord(60,1));
         gl.flush();
         // 再帰
 
