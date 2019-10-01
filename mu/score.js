@@ -602,8 +602,7 @@ window.addEventListener("load",()=>{
                 return 0;
             }else{
                 this.symbol.visible=1;
-                //(this.location=="auto")
-                this.location=this.root<60?"he":"to";
+                if(this.location=="auto")this.location=this.root<60?"he":"to";
                 this.setNotePosition(this.root,this.location,this.xPos);
             }
             return 1;
@@ -1001,9 +1000,9 @@ window.addEventListener("load",()=>{
             this.queue=Notes;
         }
         setChord(chord,base=0,x=0){
-            let n=chord.keys.length;
-            if(n>0&&this.queueAddF)console.log(chord.keys,Note.getPitchName(chord.keys))
-            let i=0;
+            //let n=chord.keys.length;
+            //if(n>0&&this.queueAddF)console.log(chord.keys,Note.getPitchName(chord.keys))
+            //let i=0;
             //暫定
             if(this.queueAddF)this.queue.push(chord);
             //if(this.queue.length>this.noteNum-2)this.queueAddF=0;//this.queue.shift()
@@ -1197,6 +1196,7 @@ window.addEventListener("load",()=>{
     var score=new Score(attLocation,uniLocation);
     
     var drop=document.getElementById("drop");
+    var MIDINameField=document.getElementById("MIDIName");
     drop.addEventListener('dragover', function(event) {
         event.preventDefault();
         event.dataTransfer.dropEffect = 'copy';
@@ -1218,17 +1218,21 @@ window.addEventListener("load",()=>{
         let file=e.dataTransfer.files[0];
         let reader = new FileReader();
         console.log(file.name);
+        MIDINameField.innerText=file.name;
         reader.readAsArrayBuffer(file);
         reader.onload = function() {   
                 //読み込んだ結果を型付配列に
                 var ar = new Uint8Array(reader.result);
                 midiObject=new Midiparcer(ar);
-                //let Notes=midiObject.getNoteArray(1);
-                //score.setNotesToQueue(Notes);
-                //score.play();
-                score.MIDItoScore(midiObject);
         }
     })
+
+    var MIDIGo=document.getElementById("MIDIGo");
+    MIDIGo.addEventListener("click",(e)=>{
+        let toNotes=midiObject.getNoteArray(document.getElementById("trackNum1").value);
+        score.setNotesToQueue(toNotes);
+        score.play();
+    });
 
     // その他の初期化
     gl.clearColor(0.9, 1.0, 1.0, 1.0);
@@ -1309,8 +1313,7 @@ window.addEventListener("load",()=>{
             score.setInput({keys:"skip"});
             score.play();
             return false;
-        }else
-        if(key[e.keyCode]==1){
+        }else if(key[e.keyCode]==1){
             if(e.keyCode in inputKeyToScale)
                 keyInputqueue.push(inputKeyToScale[e.keyCode])
             //score.setChord({node:keyInputqueue});
