@@ -259,7 +259,7 @@ window.addEventListener("load",()=>{
                 obj=this.MIDIData.track[trackNum].data["Note on"];
             }catch{
                 console.error("track["+trackNum+"] don't have any Notes");
-                return [{keys:[],duration:0}]
+                return [{keys:[],tick:0,duration:0}];
             }
             let size=obj.length;
             let duration=0,tick=0;
@@ -270,16 +270,17 @@ window.addEventListener("load",()=>{
                 duration:0,
             };
             tick=obj[0].tick;
-            console.log(obj[105])
+            console.log(obj[0])
             for(let i=0;i<size;i++){
                 if(obj[i].tick==tick){
                     t.keys.push(obj[i].data.key);
                 }else{
+                    t.tick=tick;
                     Notes.push(Object.assign({},t));
-                    tick=obj[i].tick;
                     t.keys=[];
                     t.keys.push(obj[i].data.key);
-                    t.duration=obj[0].tick-tick;
+                    t.duration=obj[i].tick-tick;
+                    tick=obj[i].tick;
                 }
             }
             console.log(Notes);
@@ -797,6 +798,7 @@ window.addEventListener("load",()=>{
                 this.alt[i] = new glGif(altSet);
                 this.alt[i].visible=0;
             }
+            this.visible=0;
             this.xPosition=0;
         }
         set noteScale(scale){
@@ -819,11 +821,6 @@ window.addEventListener("load",()=>{
                     x.setRoot(-1);
                 }
                 i++;
-            }
-        }
-        set symbolVisible(bool){
-            for(let x of this.note){
-                x.visible=bool;
             }
         }
         set xPos(num){
@@ -875,7 +872,10 @@ window.addEventListener("load",()=>{
             }
         }
         drawNoteSymbol(){
-            for(let x of this.note)x.drawSymbol();
+            if(this.visible)
+            for(let x of this.note){
+                x.drawSymbol();
+            }
         }
         drawNoteSharp(){
             for(let x of this.note)x.drawSharp();
@@ -917,13 +917,14 @@ window.addEventListener("load",()=>{
             this.loaded=0;
             this.noteNum=16;
             this.staffNum=2;
-            this.toheX=-2.8
+            this.toheX=-2.8;
+            this.scoreY=0;
             this.to=new glGif(this.img,{
                 "img":"img/to.png",
                 "callback":()=>this.loaded++,
             });
             this.tsize=0.36;
-            this.to.position=[this.toheX-0.02,1.18,0.0];
+            this.to.position=[this.toheX-0.02,this.scoreY+1.18,0.0];
             this.to.scale=[this.tsize,this.tsize,1];
 
             this.he=new glGif(this.img,{
@@ -931,7 +932,7 @@ window.addEventListener("load",()=>{
                 "callback":()=>this.loaded++,
             });
             this.hsize=0.34;
-            this.he.position=[this.toheX,0.25,0.0];
+            this.he.position=[this.toheX,this.scoreY+0.25,0.0];
             this.he.scale=[this.hsize,this.hsize,1];
 
             this.osize=0.065;
@@ -959,13 +960,13 @@ window.addEventListener("load",()=>{
                     obj.sharp.texture=this.note[0].note[0].sharp.texture;
                 }
             }
-
+            this.note[this.noteNum-1].visible=1;
             this.staff=new Array(this.staffNum);
             for(let i=0;i<this.staffNum;i++){
                 this.staff[i]=new glGif(this.wataten5);
             }
-            this.staff[0].position=[0.0,1.0,0.0];
-            this.staff[1].position=[0.0,0.0,0.0];
+            this.staff[0].position=[0.0,this.scoreY+1.0,0.0];
+            this.staff[1].position=[0.0,this.scoreY+0.0,0.0];
         }
         get isloaded(){
             return this.loaded>=this.noteNum+2?1:0;
@@ -1060,18 +1061,20 @@ window.addEventListener("load",()=>{
         play(){
             for(let i=0;i<this.noteNum-1;i++){
                 if(i<this.queue.length){
+                    this.note[i].visible=1;
                     this.note[i].root=this.queue[i].keys;
                     this.note[i].xPos=i/3.25-1.60;
                     this.note[i].check();
                 }else{
-                    this.note[i].symbolVisible=0;
+                    this.note[i].visible=0;
                     this.note[i].check();
                 };
             }
         }
-        MIDItoScore(MIDIData){
-            let notes=MIDIData.getNoteArray(1);
-            this.setNotesToQueue(notes);
+        MIDItoScore(MIDIData,track1=1,track2=2){
+            let toNotes=MIDIData.getNoteArray(track1);
+            let heNotes=MIDIData.getNoteArray(track2);
+            this.setNotesToQueue(toNotes);
             this.play();
         }
         
@@ -1229,8 +1232,10 @@ window.addEventListener("load",()=>{
 
     var MIDIGo=document.getElementById("MIDIGo");
     MIDIGo.addEventListener("click",(e)=>{
-        let toNotes=midiObject.getNoteArray(document.getElementById("trackNum1").value);
-        score.setNotesToQueue(toNotes);
+        let toNum = document.getElementById("trackNum1").value;
+        let heNum = document.getElementById("trackNum2").value;
+
+        score.MIDItoScore(midiObject,toNum,heNum);
         score.play();
     });
 
@@ -1326,10 +1331,8 @@ window.addEventListener("load",()=>{
         key[e.keyCode]=0;
         keyInputqueue=keyInputqueue.filter(x=>x!=inputKeyToScale[e.keyCode]);
         //score.setChord({node:keyInputqueue});
-        if(e.keyCode!=32){
-            score.setInput({keys:keyInputqueue})
-            score.play();
-        }
+        score.setInput({keys:keyInputqueue})
+        score.play();
     }, false);
 
     fps=60;
