@@ -253,7 +253,7 @@ window.addEventListener("load",()=>{
 
         getNoteArray(trackNum){
             if(!trackNum)trackNum=this.trackNum;
-            console.log("track"+this.trackNum)
+            console.log("track"+trackNum)
             let obj;
             try{
                 obj=this.MIDIData.track[trackNum].data["Note on"];
@@ -835,6 +835,7 @@ window.addEventListener("load",()=>{
             let hmax=0,hmin=100;
             for(let x of this.note){
                 if(x.check(key)){//xが有効ノートなら
+                    console.log(x)
                     if(x.location=="to"){
                         if(x.root>=80){
                             let tx=Math.floor((Note.getWhiteNum(x.root)-38)/2);
@@ -993,6 +994,11 @@ window.addEventListener("load",()=>{
         }
         setNotesToQueue(Notes){
             this.queue=Notes;
+        }
+        MIDItoScore(midi,t1,t2){
+            let i=0,j=0;
+            let t_1=midi.getNoteArray(t1);
+            this.setNotesToQueue(t_1)
         }
         setChord(chord,base=0,x=0){
             //let n=chord.keys.length;
@@ -1210,8 +1216,7 @@ window.addEventListener("load",()=>{
 
     var MIDIGo=document.getElementById("MIDIGo");
     MIDIGo.addEventListener("click",(e)=>{
-        let toNotes=midiObject.getNoteArray(document.getElementById("trackNum1").value);
-        score.setNotesToQueue(toNotes);
+        score.MIDItoScore(midiObject,document.getElementById("trackNum1").value,document.getElementById("trackNum2").value);
         score.play();
     });
 
@@ -1329,7 +1334,7 @@ window.addEventListener("load",()=>{
         gl.clear(gl.COLOR_BUFFER_BIT);
         
         score.draw(vpMatrix);
-        if(score.queue.length<15)score.setChord(Note.randDirtonicChord(60,1));
+        if(score.queue.length<15)score.setChord(Note.randDirtonicChord(60,2));
         gl.flush();
         // 再帰
 
