@@ -253,7 +253,7 @@ window.addEventListener("load",()=>{
 
         getNoteArray(trackNum){
             if(!trackNum)trackNum=this.trackNum;
-            console.log("track"+this.trackNum)
+            console.log("track"+trackNum)
             let obj;
             try{
                 obj=this.MIDIData.track[trackNum].data["Note on"];
@@ -823,6 +823,20 @@ window.addEventListener("load",()=>{
                 i++;
             }
         }
+        setRootLocation(scales,location=0){
+            let t=scales.length;
+            if(location=0)location=new Array(t).fill("he");
+            let i=0;
+            for(let x of this.note){
+                if(i<t){
+                    x.setRoot(scales[i]);
+                    x.setLocation(location[i]);
+                }else{
+                    x.setRoot(-1);
+                }
+                i++;
+            }
+        }
         set xPos(num){
             for(let x of this.note){
                 x.xPos=num;
@@ -837,6 +851,7 @@ window.addEventListener("load",()=>{
             let hmax=0,hmin=100;
             for(let x of this.note){
                 if(x.check(key)){//xが有効ノートなら
+                    //console.log(x)
                     if(x.location=="to"){
                         if(x.root>=80){
                             let tx=Math.floor((Note.getWhiteNum(x.root)-38)/2);
@@ -997,8 +1012,14 @@ window.addEventListener("load",()=>{
                 return [0,0,0];
             }
         }
-        setNotesToQueue(Notes){
-            this.queue=Notes;
+        setNotesToQueue(track1,track2){
+            this.queue=track1;
+        }
+        MIDItoScore(MIDIData,track1=1,track2=2){
+            let toNotes=MIDIData.getNoteArray(track1);
+            let heNotes=MIDIData.getNoteArray(track2);
+            this.setNotesToQueue(toNotes,heNotes);
+            this.play();
         }
         setChord(chord,base=0,x=0){
             //let n=chord.keys.length;
@@ -1049,7 +1070,7 @@ window.addEventListener("load",()=>{
             this.note[this.noteNum-1].check();
 
             if(this.queue.length>0){
-                console.log(this.note[this.noteNum-1].root,this.queue[0].keys)
+                console.log(/*this.note[this.noteNum-1],*/this.queue[0])
                 console.log(Note.getPitchName(this.note[this.noteNum-1].root),Note.getPitchName(this.queue[0].keys))            
                 if(diffArray(this.note[this.noteNum-1].root,this.queue[0].keys)){
                     this.queue.shift();
@@ -1062,7 +1083,8 @@ window.addEventListener("load",()=>{
             for(let i=0;i<this.noteNum-1;i++){
                 if(i<this.queue.length){
                     this.note[i].visible=1;
-                    this.note[i].root=this.queue[i].keys;
+                    this.note[i].setRootLocation(this.queue[i].keys);
+
                     this.note[i].xPos=i/3.25-1.60;
                     this.note[i].check();
                 }else{
@@ -1070,12 +1092,6 @@ window.addEventListener("load",()=>{
                     this.note[i].check();
                 };
             }
-        }
-        MIDItoScore(MIDIData,track1=1,track2=2){
-            let toNotes=MIDIData.getNoteArray(track1);
-            let heNotes=MIDIData.getNoteArray(track2);
-            this.setNotesToQueue(toNotes);
-            this.play();
         }
         
         draw(vpMatrix){
@@ -1232,10 +1248,7 @@ window.addEventListener("load",()=>{
 
     var MIDIGo=document.getElementById("MIDIGo");
     MIDIGo.addEventListener("click",(e)=>{
-        let toNum = document.getElementById("trackNum1").value;
-        let heNum = document.getElementById("trackNum2").value;
-
-        score.MIDItoScore(midiObject,toNum,heNum);
+        score.MIDItoScore(midiObject,document.getElementById("trackNum1").value,document.getElementById("trackNum2").value);
         score.play();
     });
 
@@ -1354,7 +1367,7 @@ window.addEventListener("load",()=>{
         gl.clear(gl.COLOR_BUFFER_BIT);
         
         score.draw(vpMatrix);
-        //if(score.queue.length>5&&score.queue.length<20)score.setChord(Note.randDirtonicChord(60,1));
+        if(score.queue.length<15)score.setChord(Note.randDirtonicChord(60,2));
         gl.flush();
         // 再帰
 
