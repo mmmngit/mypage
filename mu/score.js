@@ -825,7 +825,7 @@ window.addEventListener("load",()=>{
         }
         setRootLocation(scales,location=0){
             let t=scales.length;
-            if(location=0)location=new Array(t).fill("he");
+            if(!isArray(location)){location=new Array(t);location.fill("to")}
             let i=0;
             for(let x of this.note){
                 if(i<t){
@@ -926,6 +926,7 @@ window.addEventListener("load",()=>{
                 "uniLocation":uniLocation
             };
             this.key=0;
+            this.tick=0;
             this.queue=new Array();
             this.queuePos=0;
             this.queueAddF=1;
@@ -1012,15 +1013,6 @@ window.addEventListener("load",()=>{
                 return [0,0,0];
             }
         }
-        setNotesToQueue(track1,track2){
-            this.queue=track1;
-        }
-        MIDItoScore(MIDIData,track1=1,track2=2){
-            let toNotes=MIDIData.getNoteArray(track1);
-            let heNotes=MIDIData.getNoteArray(track2);
-            this.setNotesToQueue(toNotes,heNotes);
-            this.play();
-        }
         setChord(chord,base=0,x=0){
             //let n=chord.keys.length;
             //if(n>0&&this.queueAddF)console.log(chord.keys,Note.getPitchName(chord.keys))
@@ -1079,11 +1071,23 @@ window.addEventListener("load",()=>{
             }
         }
 
+        setNotesToQueue(track1,track2){
+            this.queue=track1;
+        }
+
+        MIDItoScore(MIDIData,track1=1,track2=-1){
+            let toNotes=MIDIData.getNoteArray(track1);
+            let heNotes=0;
+            if(track2!=-1)heNotes=MIDIData.getNoteArray(track2);
+            this.setNotesToQueue(toNotes,heNotes);
+            this.play();
+        }
+
         play(){
             for(let i=0;i<this.noteNum-1;i++){
                 if(i<this.queue.length){
                     this.note[i].visible=1;
-                    this.note[i].setRootLocation(this.queue[i].keys);
+                    this.note[i].setRootLocation(this.queue[i].keys,this.queue[i].locations);
 
                     this.note[i].xPos=i/3.25-1.60;
                     this.note[i].check();
@@ -1093,7 +1097,7 @@ window.addEventListener("load",()=>{
                 };
             }
         }
-        
+
         draw(vpMatrix){
             this.staff[0].draw();
             this.staff[1].draw();
