@@ -823,6 +823,21 @@ window.addEventListener("load",()=>{
                 i++;
             }
         }
+        set location(locationArray){
+            let t=this.note.length;
+            let locations = locationArray;
+            if(!isArray(locations)){
+                locations=new Array(t);
+                locations.fill("to");
+            }
+            let i=0;
+            for(let x of this.note){
+                if(i<t){
+                    x.setLocation(locations[i]);
+                }
+                i++;
+            }
+        }
         setRootLocation(scales,location=0){
             let t=scales.length;
             if(!isArray(location)){location=new Array(t);location.fill("to")}
@@ -1051,6 +1066,7 @@ window.addEventListener("load",()=>{
         }
 
         setInput(chord){
+            console.log(chord)
             if(chord.keys=="skip"){
                 if(this.queue.length>0){
                     this.note[this.noteNum-1].root=this.queue[0].keys;
@@ -1059,11 +1075,12 @@ window.addEventListener("load",()=>{
             }
             else this.note[this.noteNum-1].root=chord.keys;
             this.note[this.noteNum-1].xPos=-1.90;
+            this.note[this.noteNum-1].location=0;
             this.note[this.noteNum-1].check();
 
             if(this.queue.length>0){
-                console.log(/*this.note[this.noteNum-1],*/this.queue[0])
-                console.log(Note.getPitchName(this.note[this.noteNum-1].root),Note.getPitchName(this.queue[0].keys))            
+                //console.log(/*this.note[this.noteNum-1],*/this.queue[0])
+                //console.log(Note.getPitchName(this.note[this.noteNum-1].root),Note.getPitchName(this.queue[0].keys))            
                 if(diffArray(this.note[this.noteNum-1].root,this.queue[0].keys)){
                     this.queue.shift();
                     this.queueAddF=1;
@@ -1254,6 +1271,7 @@ window.addEventListener("load",()=>{
     MIDIGo.addEventListener("click",(e)=>{
         score.MIDItoScore(midiObject,document.getElementById("trackNum1").value,document.getElementById("trackNum2").value);
         score.play();
+        document.activeElement.blur();
     });
 
     // その他の初期化
@@ -1266,7 +1284,7 @@ window.addEventListener("load",()=>{
     let key=new Array(256).fill(0);
     let inputKeyToScale={
         32:"skip",
-        90:"C4",
+        90:"C3",
         83:"C#4",
         88:"D4",
         68:"D#4",
@@ -1283,7 +1301,7 @@ window.addEventListener("load",()=>{
         187:"D#5",
         191:"E5",
         186:"E#5",
-        226:"F5",
+        226:"F6",
     }
 
     //Midi keybord Setup
@@ -1337,7 +1355,7 @@ window.addEventListener("load",()=>{
             return false;
         }else if(key[e.keyCode]==1){
             if(e.keyCode in inputKeyToScale)
-                keyInputqueue.push(inputKeyToScale[e.keyCode])
+                keyInputqueue.push(inputKeyToScale[e.keyCode]);
             //score.setChord({node:keyInputqueue});
             score.setInput({keys:keyInputqueue});
             
@@ -1371,7 +1389,7 @@ window.addEventListener("load",()=>{
         gl.clear(gl.COLOR_BUFFER_BIT);
         
         score.draw(vpMatrix);
-        if(score.queue.length<15)score.setChord(Note.randDirtonicChord(60,2));
+        if(score.queue.length<15)score.setChord(Note.randDirtonicChord(60-12,3));
         gl.flush();
         // 再帰
 

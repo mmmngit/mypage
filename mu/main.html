@@ -38,8 +38,8 @@
             }
             #field input{
                 width:50px;
+                user-select: none 
             }
-            
         </style>
         
         <div>
@@ -53,7 +53,7 @@
             <label id="MIDIName">Please Drop MIDI on Score</label><br>
             to:<input type="number" id="trackNum1" value="1" min="0">
             he:<input type="number" id="trackNum2" value="2" min="-1">
-            <input type="button" id="MIDIGo" value="MIDI">
+            <input type="button" id="MIDIGo" value="MIDI" tabindex="-1">
         </p>
 
         <p align="center"><canvas class="c" id="canvas" hidden></canvas></p>
