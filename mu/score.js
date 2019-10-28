@@ -606,6 +606,8 @@ window.addEventListener("load",()=>{
                 if(this.location=="auto")this.location=this.root<60?"he":"to";
                 this.setNotePosition(this.root,this.location,this.xPos);
             }
+            if(this.symbol.visible==0){
+            }
             return 1;
         }
 
@@ -886,16 +888,18 @@ window.addEventListener("load",()=>{
                     }
                 }
             }
+            console.log(tmax,tmin)
             let i=0;
             for(let y of this.alt){
                 y.visible=0;
                 if(i<tmax&&i<10){
                     y.visible=1;
-                    y.position=this.getNotePosition(Note.keyAdd(81/*A5*/,i*2),0,this.xPosition);
+                    y.position=this.getNotePosition(Note.keyAdd(81/*A5*/,i*2),"to",this.xPosition);
                 }else if(tmin!=100&&(i-10)<tmin&&i<20&&i>=10){
+                    console.log("tmin")
                     y.visible=1;
-                    y.position=this.getNotePosition(Note.keySub(60/*A5*/,(i-10)*2),0,this.xPosition);
-                }else if(tmin!=100&&(i-20)<tmin&&i<40&&i>=20){
+                    y.position=this.getNotePosition(Note.keySub(60/*E4*/,(i-10)*2),"to",this.xPosition);
+                }else{
                     y.visible=0;
                 }
                 i++;
@@ -1345,7 +1349,7 @@ window.addEventListener("load",()=>{
     navigator.requestMIDIAccess({sysex:false}).then(success, failure);
     
     window.addEventListener("click",()=>{
-        score.setChord(Note.randDirtonicChord(60,1),1,0.6);
+        score.setChord(Note.randDirtonicChord(48,1),1,0.6);
     })
     window.addEventListener('keydown', (e)=>{
         key[e.keyCode]++;
@@ -1389,7 +1393,7 @@ window.addEventListener("load",()=>{
         gl.clear(gl.COLOR_BUFFER_BIT);
         
         score.draw(vpMatrix);
-        if(score.queue.length<15)score.setChord(Note.randDirtonicChord(60-12,3));
+        //if(score.queue.length<15)score.setChord(Note.randDirtonicChord(60-12,3));
         gl.flush();
         // 再帰
 
