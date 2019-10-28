@@ -864,8 +864,8 @@ window.addEventListener("load",()=>{
             return this.note.map(e => e=e.root).filter(e=>e>1);
         }
         check(key=0){
-            let tmax=0,tmin=100;
-            let hmax=0,hmin=100;
+            let tmax=0,tmin=0;
+            let hmax=0,hmin=0;
             for(let x of this.note){
                 if(x.check(key)){//xが有効ノートなら
                     //console.log(x)
@@ -875,7 +875,8 @@ window.addEventListener("load",()=>{
                             if(tmax<tx)tmax=tx;
                         }else if(x.root<=60){
                             let tn=Math.ceil((29-Note.getWhiteNum(x.root))/2);
-                            if(tmin>tn)tmin=tn;
+                            if(tmin<tn)tmin=tn;
+                            
                         }
                     }else if(x.location=="he"){
                         if(x.root>=60){
@@ -888,7 +889,7 @@ window.addEventListener("load",()=>{
                     }
                 }
             }
-            console.log(tmax,tmin)
+            
             let i=0;
             for(let y of this.alt){
                 y.visible=0;
@@ -896,7 +897,6 @@ window.addEventListener("load",()=>{
                     y.visible=1;
                     y.position=this.getNotePosition(Note.keyAdd(81/*A5*/,i*2),"to",this.xPosition);
                 }else if(tmin!=100&&(i-10)<tmin&&i<20&&i>=10){
-                    console.log("tmin")
                     y.visible=1;
                     y.position=this.getNotePosition(Note.keySub(60/*E4*/,(i-10)*2),"to",this.xPosition);
                 }else{
@@ -1114,6 +1114,7 @@ window.addEventListener("load",()=>{
                     this.note[i].check();
                 }else{
                     this.note[i].visible=0;
+                    this.note[i].root=[-1];
                     this.note[i].check();
                 };
             }
@@ -1374,7 +1375,7 @@ window.addEventListener("load",()=>{
         score.play();
     }, false);
 
-    fps=60;
+    fps=1000;
     count=0;
     console.log("unit size="+gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS));
     
@@ -1393,7 +1394,7 @@ window.addEventListener("load",()=>{
         gl.clear(gl.COLOR_BUFFER_BIT);
         
         score.draw(vpMatrix);
-        //if(score.queue.length<15)score.setChord(Note.randDirtonicChord(60-12,3));
+        if(score.queue.length<15)score.setChord(Note.randDirtonicChord(60-12,3));
         gl.flush();
         // 再帰
 
