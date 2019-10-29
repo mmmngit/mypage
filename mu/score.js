@@ -947,11 +947,12 @@ window.addEventListener("load",()=>{
             this.key=0;
             this.tick=0;
             this.timeunit=480;
+            this.speed=2;
             this.queue=new Array();
             this.queuePos=0;
             this.queueAddF=1;
             this.loaded=0;
-            this.noteNum=16;
+            this.noteNum=32;
             this.staffNum=2;
             this.toheX=-2.8;
             this.scoreY=0;
@@ -1120,7 +1121,7 @@ window.addEventListener("load",()=>{
                     this.note[i].root=this.queue[i].keys;
                     this.note[i].location=this.queue[i].locations;
 
-                    this.note[i].xPos=(this.queue[i].tick-this.tick*10)/this.timeunit+this.xPos//i/3.25-this.xPos;
+                    this.note[i].xPos=(this.queue[i].tick-this.tick*50)/this.timeunit/this.speed+this.xPos//i/3.25-this.xPos;
                     //console.log(this.note[i].xPosition);
                     if(this.note[i].xPosition<this.xPos)this.note[i].xPos=this.xPos;
                     this.note[i].check();
