@@ -946,6 +946,7 @@ window.addEventListener("load",()=>{
             };
             this.key=0;
             this.tick=0;
+            this.timeunit=480;
             this.queue=new Array();
             this.queuePos=0;
             this.queueAddF=1;
@@ -954,6 +955,8 @@ window.addEventListener("load",()=>{
             this.staffNum=2;
             this.toheX=-2.8;
             this.scoreY=0;
+            this.xPos=-1.60;
+
             this.to=new glGif(this.img,{
                 "img":"img/to.png",
                 "callback":()=>this.loaded++,
@@ -1070,21 +1073,25 @@ window.addEventListener("load",()=>{
         }
 
         setInput(chord){
-            console.log(chord)
+            
             if(chord.keys=="skip"){
                 if(this.queue.length>0){
                     this.note[this.noteNum-1].root=this.queue[0].keys;
                     this.queue.shift();
                 }
             }
-            else this.note[this.noteNum-1].root=chord.keys;
+            else{
+                this.note[this.noteNum-1].root=chord.keys;
+                //console.log(chord);
+            }
             this.note[this.noteNum-1].xPos=-1.90;
             this.note[this.noteNum-1].location=0;
             this.note[this.noteNum-1].check();
 
             if(this.queue.length>0){
-                //console.log(/*this.note[this.noteNum-1],*/this.queue[0])
+                console.log(/*this.note[this.noteNum-1],*/this.queue[0])
                 //console.log(Note.getPitchName(this.note[this.noteNum-1].root),Note.getPitchName(this.queue[0].keys))            
+                
                 if(diffArray(this.note[this.noteNum-1].root,this.queue[0].keys)){
                     this.queue.shift();
                     this.queueAddF=1;
@@ -1101,6 +1108,8 @@ window.addEventListener("load",()=>{
             let heNotes=0;
             if(track2!=-1)heNotes=MIDIData.getNoteArray(track2);
             this.setNotesToQueue(toNotes,heNotes);
+            //this.timeunit=MIDIData.header.timeunit;
+            //console.log(this.timeunit);
             this.play();
         }
 
@@ -1108,9 +1117,12 @@ window.addEventListener("load",()=>{
             for(let i=0;i<this.noteNum-1;i++){
                 if(i<this.queue.length){
                     this.note[i].visible=1;
-                    this.note[i].setRootLocation(this.queue[i].keys,this.queue[i].locations);
+                    this.note[i].root=this.queue[i].keys;
+                    this.note[i].location=this.queue[i].locations;
 
-                    this.note[i].xPos=i/3.25-1.60;
+                    this.note[i].xPos=(this.queue[i].tick-this.tick*10)/this.timeunit+this.xPos//i/3.25-this.xPos;
+                    //console.log(this.note[i].xPosition);
+                    if(this.note[i].xPosition<this.xPos)this.note[i].xPos=this.xPos;
                     this.note[i].check();
                 }else{
                     this.note[i].visible=0;
@@ -1298,7 +1310,7 @@ window.addEventListener("load",()=>{
     let key=new Array(256).fill(0);
     let inputKeyToScale={
         32:"skip",
-        90:"C3",
+        90:"C4",
         83:"C#4",
         88:"D4",
         68:"D#4",
@@ -1311,11 +1323,11 @@ window.addEventListener("load",()=>{
         74:"A#4",
         77:"B4",
         188:"C5",
+        76:"C#5",
         190:"D5",
         187:"D#5",
         191:"E5",
-        186:"E#5",
-        226:"F6",
+        226:"F5",
     }
 
     //Midi keybord Setup
@@ -1387,7 +1399,7 @@ window.addEventListener("load",()=>{
     fps=1000;
     count=0;
     console.log("unit size="+gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS));
-    
+    score.tick=0;
     loading();
     function loading(){
         if(score.isloaded)render();
@@ -1408,6 +1420,8 @@ window.addEventListener("load",()=>{
         gl.flush();
         // 再帰
 
+        score.tick++;
+        score.play();
         count++;
         setTimeout(render,1000/fps);
     }
