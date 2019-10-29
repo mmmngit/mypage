@@ -1293,7 +1293,7 @@ window.addEventListener("load",()=>{
         bgblue=document.getElementById("bgb").value;
         gl.clearColor(1.0*bgred/255, 1.0*bggreen/255, 1.0*bgblue/255, 1.0);
         document.body.style.backgroundColor = "rgba("+bgred+","+bggreen+","+bgblue+",1)";
-    })
+    },false)
     //input function
     let key=new Array(256).fill(0);
     let inputKeyToScale={
@@ -1358,7 +1358,7 @@ window.addEventListener("load",()=>{
     }
     navigator.requestMIDIAccess({sysex:false}).then(success, failure);
     
-    window.addEventListener("click",()=>{
+    c.addEventListener("click",()=>{
         score.setChord(Note.randDirtonicChord(48,1),1,0.6);
     })
     window.addEventListener('keydown', (e)=>{
