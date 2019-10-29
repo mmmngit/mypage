@@ -1280,11 +1280,20 @@ window.addEventListener("load",()=>{
     });
 
     // その他の初期化
-    gl.clearColor(0.9, 1.0, 1.0, 1.0);
+    let bgred=255,bggreen=255,bgblue=255;
+    gl.clearColor(1.0*bgred/255, 1.0*bggreen/255, 1.0*bgblue/255, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     mx = 0.5; my = 0.5;
     startTime = new Date().getTime();
 
+    let bgsetting=document.getElementById("bgsetting");
+    bgsetting.addEventListener("input",()=>{
+        bgred=document.getElementById("bgr").value;
+        bggreen=document.getElementById("bgg").value;
+        bgblue=document.getElementById("bgb").value;
+        gl.clearColor(1.0*bgred/255, 1.0*bggreen/255, 1.0*bgblue/255, 1.0);
+        document.body.style.backgroundColor = "rgba("+bgred+","+bggreen+","+bgblue+",1)";
+    })
     //input function
     let key=new Array(256).fill(0);
     let inputKeyToScale={
@@ -1387,6 +1396,7 @@ window.addEventListener("load",()=>{
     function render(){
         // フラグチェックなど
         if(!run)return 0;
+        //gl.clearColor(1.0*bgred/255, 1.0*bggreen/255, 1.0*bgblue/255, 1.0);
         
         // 時間管理
         time = (new Date().getTime() - startTime) * 0.001;
