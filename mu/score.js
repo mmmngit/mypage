@@ -435,6 +435,7 @@ window.addEventListener("load",()=>{
             this.images=new Array(1);
             this.images[0] = new Image();
             this.images[0].src = filePath;
+            this.images[0].crossOrigin = "Anonymous";
             this.images[0].onload=()=>{
                 this.loaded=1;
                 callback();
@@ -446,6 +447,7 @@ window.addEventListener("load",()=>{
             for(let i=0;i<num;i++){
                 this.images[i] = new Image();
                 this.images[i].src = filePath+(i+1)+".gif";
+                this.images[i].crossOrigin = "anonymous";
                 if(i==num-1){
                     this.images[i].onload=()=>{
                         this.loaded=1;
@@ -958,7 +960,7 @@ window.addEventListener("load",()=>{
             this.xPos=-1.60;
 
             this.to=new glGif(this.img,{
-                "img":"img/to.png",
+                "img":"https://github.com/mmmngit/mypage/tree/master/mu/img/to.png",
                 "callback":()=>this.loaded++,
             });
             this.tsize=0.36;
@@ -966,7 +968,7 @@ window.addEventListener("load",()=>{
             this.to.scale=[this.tsize,this.tsize,1];
 
             this.he=new glGif(this.img,{
-                img:"img/he.png",
+                img:"https://github.com/mmmngit/mypage/tree/master/mu/img/he.png",
                 "callback":()=>this.loaded++,
             });
             this.hsize=0.34;
@@ -978,12 +980,12 @@ window.addEventListener("load",()=>{
             this.note=new Array(this.noteNum);
             for(let i=0;i<this.noteNum;i++){
                 this.note[i]=new Notes(this.img,{
-                    "img":"img/on.png",
+                    "img":"https://github.com/mmmngit/mypage/tree/master/mu/img/on.png",
                     "callback":()=>{
                         this.loaded++;
                     },
                 },{
-                    "img":"img/sha.png",
+                    "img":"https://github.com/mmmngit/mypage/tree/master/mu/img/sha.png",
                     "callback":()=>{
                         this.loaded++;
                     },

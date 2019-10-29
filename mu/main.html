@@ -33,12 +33,13 @@
                 position: absolute;
             	bottom:10%;
             }
-            #field{
-                color: #555;
-            }
             #field input{
                 width:50px;
                 user-select: none 
+            }
+            #field #speed{
+                color: #555;
+                width:100px;
             }
         </style>
         
@@ -54,6 +55,7 @@
             to:<input type="number" id="trackNum1" value="1" min="0">
             he:<input type="number" id="trackNum2" value="2" min="-1">
             <input type="button" id="MIDIGo" value="MIDI" tabindex="-1">
+            speed:<input type="range" id="speed" value="255" min="0" max="255">
         </div>
         <div id="bgsetting">
             <p>background color</p>
