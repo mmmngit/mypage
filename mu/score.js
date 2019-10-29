@@ -960,7 +960,7 @@ window.addEventListener("load",()=>{
             this.xPos=-1.60;
 
             this.to=new glGif(this.img,{
-                "img":"https://github.com/mmmngit/mypage/tree/master/mu/img/to.png",
+                "img":"http://ksgk.html.xdomain.jp/mu/img/to.png",
                 "callback":()=>this.loaded++,
             });
             this.tsize=0.36;
@@ -968,7 +968,7 @@ window.addEventListener("load",()=>{
             this.to.scale=[this.tsize,this.tsize,1];
 
             this.he=new glGif(this.img,{
-                img:"https://github.com/mmmngit/mypage/tree/master/mu/img/he.png",
+                img:"http://ksgk.html.xdomain.jp/mu/img/he.png",
                 "callback":()=>this.loaded++,
             });
             this.hsize=0.34;
@@ -980,12 +980,12 @@ window.addEventListener("load",()=>{
             this.note=new Array(this.noteNum);
             for(let i=0;i<this.noteNum;i++){
                 this.note[i]=new Notes(this.img,{
-                    "img":"https://github.com/mmmngit/mypage/tree/master/mu/img/on.png",
+                    "img":"http://ksgk.html.xdomain.jp/mu/img/on.png",
                     "callback":()=>{
                         this.loaded++;
                     },
                 },{
-                    "img":"https://github.com/mmmngit/mypage/tree/master/mu/img/sha.png",
+                    "img":"http://ksgk.html.xdomain.jp/mu/img/sha.png",
                     "callback":()=>{
                         this.loaded++;
                     },
