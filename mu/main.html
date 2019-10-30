@@ -41,6 +41,9 @@
                 color: #555;
                 width:100px;
             }
+            #field #speedvalue{
+                width:20px;
+            }
         </style>
         
         <div>
@@ -55,13 +58,13 @@
             to:<input type="number" id="trackNum1" value="1" min="0">
             he:<input type="number" id="trackNum2" value="2" min="-1">
             <input type="button" id="MIDIGo" value="MIDI" tabindex="-1">
-            speed:<input type="range" id="speed" value="255" min="0" max="255">
+            speed:<input type="range" id="speed" value="5" step="1" min="1" max="10"><label id="speedvalue">5</label>
         </div>
         <div id="bgsetting">
             <p>background color</p>
-            r:<input type="range" id="bgr" value="255" min="0" max="255">
-            g:<input type="range" id="bgg" value="255" min="0" max="255">
-            b:<input type="range" id="bgb" value="255" min="0" max="255">
+            r:<label id="rvalue">255</label><input type="range" id="bgr" value="255" min="0" max="255">
+            g:<label id="gvalue">255</label><input type="range" id="bgg" value="255" min="0" max="255">
+            b:<label id="bvalue">255</label><input type="range" id="bgb" value="255" min="0" max="255">
         </div>
 
         <p align="center"><canvas class="c" id="canvas" hidden></canvas></p>

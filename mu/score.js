@@ -954,7 +954,7 @@ window.addEventListener("load",()=>{
             this.queuePos=0;
             this.queueAddF=1;
             this.loaded=0;
-            this.noteNum=32;
+            this.noteNum=20;
             this.staffNum=2;
             this.toheX=-2.8;
             this.scoreY=0;
@@ -1067,6 +1067,9 @@ window.addEventListener("load",()=>{
             this.note[num].setlocation=location;
             this.note[num].position=this.getNotePosition(posName,location,x);
         }
+        setSpeed(num){
+            this.speed=num;
+        }
         setkey(n){
             if(isString(n)){
                 this.key=Note.getNum(n)%12;
@@ -1109,6 +1112,7 @@ window.addEventListener("load",()=>{
         MIDItoScore(MIDIData,track1=1,track2=-1){
             let toNotes=MIDIData.getNoteArray(track1);
             let heNotes=0;
+            this.tick=0;
             if(track2!=-1)heNotes=MIDIData.getNoteArray(track2);
             this.setNotesToQueue(toNotes,heNotes);
             //this.timeunit=MIDIData.header.timeunit;
@@ -1119,14 +1123,18 @@ window.addEventListener("load",()=>{
         play(){
             for(let i=0;i<this.noteNum-1;i++){
                 if(i<this.queue.length){
-                    this.note[i].visible=1;
-                    this.note[i].root=this.queue[i].keys;
-                    this.note[i].location=this.queue[i].locations;
+                    this.note[i].xPos=((this.queue[i].tick-this.tick*50)/this.timeunit)*this.speed/2+this.xPos//i/3.25-this.xPos;
 
-                    this.note[i].xPos=(this.queue[i].tick-this.tick*50)/this.timeunit/this.speed+this.xPos//i/3.25-this.xPos;
-                    //console.log(this.note[i].xPosition);
-                    if(this.note[i].xPosition<this.xPos)this.note[i].xPos=this.xPos;
-                    this.note[i].check();
+                    if(this.note[i].xPosition<3){
+                        this.note[i].visible=1;
+                        this.note[i].root=this.queue[i].keys;
+                        this.note[i].location=this.queue[i].locations;
+
+                        //console.log(this.note[i].xPosition);
+                        if(this.note[i].xPosition<this.xPos)this.note[i].xPos=this.xPos;
+                        this.note[i].check();
+                    }
+                    
                 }else{
                     this.note[i].visible=0;
                     this.note[i].root=[-1];
@@ -1302,13 +1310,26 @@ window.addEventListener("load",()=>{
     startTime = new Date().getTime();
 
     let bgsetting=document.getElementById("bgsetting");
+    let rfield=document.getElementById("rvalue");
+    let gfield=document.getElementById("gvalue");
+    let bfield=document.getElementById("bvalue");
     bgsetting.addEventListener("input",()=>{
         bgred=document.getElementById("bgr").value;
         bggreen=document.getElementById("bgg").value;
         bgblue=document.getElementById("bgb").value;
+        rfield.innerText=bgred;
+        gfield.innerText=bggreen;
+        bfield.innerText=bgblue;
         gl.clearColor(1.0*bgred/255, 1.0*bggreen/255, 1.0*bgblue/255, 1.0);
         document.body.style.backgroundColor = "rgba("+bgred+","+bggreen+","+bgblue+",1)";
     },false)
+    let speedSetting=document.getElementById("speed");
+    let speedfield = document.getElementById("speedvalue");
+    speedSetting.addEventListener("input",()=>{
+        let sp=document.getElementById("speed").value;
+        score.setSpeed(sp);
+        speedfield.innerText=sp;
+    })
     //input function
     let key=new Array(256).fill(0);
     let inputKeyToScale={
@@ -1399,7 +1420,7 @@ window.addEventListener("load",()=>{
         score.play();
     }, false);
 
-    fps=1000;
+    fps=60;
     count=0;
     console.log("unit size="+gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS));
     score.tick=0;
